@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "PaymentService/pkg/payment/v1;payment_v1";
+
+// PaymentService предоставляет методы для проведения платежей по заказам.
+service PaymentService {
+    // PayOrder выполняет операцию оплаты заказа на основе переданных данных.
+    rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+}
+
+// PayOrderRequest содержит данные, необходимые для проведения оплаты.
+message PayOrderRequest {
+    // order_uuid уникальный идентификатор оплачиваемого заказа.
+    string order_uuid = 1;
+    
+    // user_uuid уникальный идентификатор пользователя, совершающего оплату.
+    string user_uuid = 2;
+    
+    // payment_method выбранный пользователем способ оплаты.
+    PaymentMethod payment_method = 3;
+}
+
+// PayOrderResponse содержит результат успешного проведения оплаты.
+message PayOrderResponse {
+    // transaction_uuid уникальный идентификатор созданной транзакции.
+    string transaction_uuid = 1;
+}
+
+// PaymentMethod описывает доступные способы оплаты заказа.
+enum PaymentMethod {
+    // PAYMENT_METHOD_UNSPECIFIED способ оплаты не указан (значение по умолчанию).
+    PAYMENT_METHOD_UNSPECIFIED = 0;   
+    
+    // PAYMENT_METHOD_CARD оплата стандартной банковской картой.
+    PAYMENT_METHOD_CARD = 1;   
+    
+    // PAYMENT_METHOD_SBP оплата через Систему быстрых платежей.
+    PAYMENT_METHOD_SBP = 2;
+    
+    // PAYMENT_METHOD_CREDIT_CARD оплата кредитной картой.
+    PAYMENT_METHOD_CREDIT_CARD = 3;
+    
+    // PAYMENT_METHOD_INVESTOR_MONEY оплата с использованием средств инвестора.
+    PAYMENT_METHOD_INVESTOR_MONEY = 4;
+}
