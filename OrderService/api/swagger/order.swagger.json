@@ -1,0 +1,303 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "order/v1/order.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "OrderService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/orders": {
+      "post": {
+        "summary": "CreateOrder создает новый заказ для пользователя.",
+        "operationId": "OrderService_CreateOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateOrderRequest содержит данные, необходимые для создания нового заказа.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}": {
+      "get": {
+        "summary": "GetOrderByUUID возвращает подробную информацию о заказе по его идентификатору.",
+        "operationId": "OrderService_GetOrderByUUID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderByUUIDResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - уникальный идентификатор искомого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}/cancel": {
+      "post": {
+        "summary": "CancelOrder отменяет заказ, если он еще не был оплачен.",
+        "operationId": "OrderService_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - уникальный идентификатор отменяемого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}/pay": {
+      "post": {
+        "summary": "PayOrder инициирует процесс оплаты для существующего заказа.",
+        "operationId": "OrderService_PayOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PayOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - идентификатор оплачиваемого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderServicePayOrderBody"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "OrderServicePayOrderBody": {
+      "type": "object",
+      "properties": {
+        "payment_method": {
+          "$ref": "#/definitions/v1PaymentMethod",
+          "description": "payment_method - способ, которым клиент хочет оплатить заказ."
+        }
+      },
+      "description": "PayOrderRequest содержит параметры для старта оплаты."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1CancelOrderResponse": {
+      "type": "object",
+      "description": "CancelOrderResponse возвращает пустой ответ при успешной отмене (204 No Content)."
+    },
+    "v1CreateOrderRequest": {
+      "type": "object",
+      "properties": {
+        "user_uuid": {
+          "type": "string",
+          "description": "user_uuid - идентификатор пользователя-покупателя."
+        },
+        "part_uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "part_uuids - список идентификаторов товаров для заказа."
+        }
+      },
+      "description": "CreateOrderRequest содержит данные, необходимые для создания нового заказа."
+    },
+    "v1CreateOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order_uuid": {
+          "type": "string",
+          "description": "order_uuid - присвоенный уникальный идентификатор нового заказа."
+        },
+        "total_price": {
+          "type": "number",
+          "format": "double",
+          "description": "total_price - рассчитанная итоговая стоимость."
+        }
+      },
+      "description": "CreateOrderResponse возвращает базовую информацию о только что созданном заказе."
+    },
+    "v1GetOrderByUUIDResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "GetOrderByUUIDResponse содержит полную информацию о заказе."
+    },
+    "v1Order": {
+      "type": "object",
+      "properties": {
+        "order_uuid": {
+          "type": "string",
+          "description": "order_uuid - уникальный идентификатор заказа."
+        },
+        "user_uuid": {
+          "type": "string",
+          "description": "user_uuid - идентификатор пользователя, создавшего заказ."
+        },
+        "part_uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "part_uuids - список идентификаторов заказанных деталей/товаров."
+        },
+        "total_price": {
+          "type": "number",
+          "format": "double",
+          "description": "total_price - общая стоимость заказа."
+        },
+        "transaction_uuid": {
+          "type": "string",
+          "description": "transaction_uuid - идентификатор транзакции оплаты (если есть)."
+        },
+        "payment_method": {
+          "$ref": "#/definitions/v1PaymentMethod",
+          "description": "payment_method - выбранный способ оплаты."
+        },
+        "status": {
+          "type": "string",
+          "description": "status - текущий статус заказа."
+        }
+      },
+      "title": "Order - заказ, который создает пользователь"
+    },
+    "v1PayOrderResponse": {
+      "type": "object",
+      "properties": {
+        "transaction_uuid": {
+          "type": "string",
+          "description": "transaction_uuid - идентификатор созданной платежной транзакции."
+        }
+      },
+      "description": "PayOrderResponse возвращает информацию о транзакции."
+    },
+    "v1PaymentMethod": {
+      "type": "string",
+      "enum": [
+        "PAYMENT_METHOD_UNKNOWN",
+        "PAYMENT_METHOD_CARD",
+        "PAYMENT_METHOD_SBP",
+        "PAYMENT_METHOD_CREDIT_CARD",
+        "PAYMENT_METHOD_INVESTOR_MONEY"
+      ],
+      "default": "PAYMENT_METHOD_UNKNOWN",
+      "description": "PaymentMethod описывает доступные способы оплаты в системе.\n\n - PAYMENT_METHOD_UNKNOWN: UNKNOWN - способ оплаты не указан или неизвестен (значение по умолчанию).\n - PAYMENT_METHOD_CARD: CARD - оплата банковской картой.\n - PAYMENT_METHOD_SBP: SBP - оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: CREDIT_CARD - оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: INVESTOR_MONEY - оплата средствами инвестора."
+    }
+  }
+}
