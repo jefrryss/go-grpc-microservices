@@ -1,8 +1,8 @@
 package delivery
 
 import (
-	"OrderService/internal/domain"
-	order_v1 "OrderService/pkg/proto/order/v1"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/domain"
+	order_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 )
 
 func ToDomainPaymentMethod(pbMethod order_v1.PaymentMethod) domain.PaymentMethod {

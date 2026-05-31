@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	inventory_v1 "InventoryService/pkg/inventory/v1"
-	"OrderService/internal/domain"
-
 	"github.com/google/uuid"
+
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/domain"
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
 )
 
 var (

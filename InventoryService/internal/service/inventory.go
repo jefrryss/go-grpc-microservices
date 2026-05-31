@@ -1,11 +1,11 @@
 package service
 
 import (
-	"InventoryService/internal/repository"
-	inventory_v1 "InventoryService/pkg/inventory/v1"
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository"
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
 )
 
 type InventoryService struct {

@@ -1,12 +1,12 @@
 package repository
 
 import (
-	inventory_v1 "InventoryService/pkg/inventory/v1"
 	"context"
 	"errors"
 	"sync"
 
 	"github.com/google/uuid"
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
 	"google.golang.org/protobuf/proto"
 )
 
