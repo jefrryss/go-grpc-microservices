@@ -8,11 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/delivery"
-	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository"
-	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/service"
+	api "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/api/inventory/v1"
+	repository "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository/part"
+	service "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/service/part"
 	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -28,7 +27,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	repo := repository.NewMemoryRepo()
 	serv := service.NewInventoryService(repo)
-	server := delivery.NewInventoryServer(serv)
+	server := api.NewInventoryServer(serv)
 
 	inventory_v1.RegisterInventoryServiceServer(grpcServer, server)
 
