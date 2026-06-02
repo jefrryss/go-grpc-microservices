@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/delivery"
-	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/service"
+	api "github.com/jefrryss/go-grpc-microservices/PaymentService/internal/api/payment/v1"
+	service "github.com/jefrryss/go-grpc-microservices/PaymentService/internal/service/payment"
 	payment_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/payment/v1"
 
 	"google.golang.org/grpc"
@@ -26,7 +26,7 @@ func main() {
 	}
 	grpcServer := grpc.NewServer()
 	paymentService := service.NewPaymentService()
-	paymentServer := delivery.NewPaymentServer(paymentService)
+	paymentServer := api.NewPaymentServer(paymentService)
 
 	payment_v1.RegisterPaymentServiceServer(grpcServer, paymentServer)
 
