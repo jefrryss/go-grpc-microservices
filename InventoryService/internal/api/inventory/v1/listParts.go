@@ -10,7 +10,7 @@ import (
 )
 
 func (i *InventoryServer) ListParts(ctx context.Context, req *inventory_v1.ListPartsRequest) (*inventory_v1.ListPartsResponse, error) {
-	modelFilter, err := converter.ConvertToDomainFilter(req.Filter)
+	modelFilter, err := converter.ConvertToDomainFilter(req.GetFilter())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid filter parameters: %v", err)
 	}

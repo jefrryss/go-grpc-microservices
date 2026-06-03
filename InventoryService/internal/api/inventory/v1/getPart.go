@@ -11,7 +11,7 @@ import (
 )
 
 func (i *InventoryServer) GetPart(ctx context.Context, req *inventory_v1.GetPartRequest) (*inventory_v1.GetPartResponse, error) {
-	parsedUUID, err := uuid.Parse(req.Uuid)
+	parsedUUID, err := uuid.Parse(req.GetUuid())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid uuid format: %v", err)
 	}
