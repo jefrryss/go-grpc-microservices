@@ -12,9 +12,11 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/delivery"
-	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository"
-	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/service"
+	api "github.com/jefrryss/go-grpc-microservices/OrderService/internal/api/order/v1"
+	clientInventory "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/inventory/v1"
+	clientPayment "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/payment/v1"
+	repository "github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository/order"
+	service "github.com/jefrryss/go-grpc-microservices/OrderService/internal/service/order"
 	order_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -32,7 +34,7 @@ func main() {
 		log.Fatalf("Failed to connect to InventoryService: %v", err)
 	}
 	defer inventoryConn.Close()
-	inventoryClient := delivery.NewGrpcInventoryClient(inventoryConn)
+	inventoryClient := clientInventory.NewGrpcInventoryClient(inventoryConn)
 	log.Println("Connected to InventoryService on localhost:50052")
 
 	paymentConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -40,7 +42,7 @@ func main() {
 		log.Fatalf("Failed to connect to PaymentService: %v", err)
 	}
 	defer paymentConn.Close()
-	paymentClient := delivery.NewGrpcPaymentClient(paymentConn)
+	paymentClient := clientPayment.NewGrpcPaymentClient(paymentConn)
 	log.Println("Connected to PaymentService on localhost:50053")
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", GrpcPort))
@@ -52,7 +54,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	memoryRepo := repository.NewOrderMemory()
 	orderService := service.NewOrderService(memoryRepo, paymentClient, inventoryClient)
-	orderServer := delivery.NewOrderServer(orderService)
+	orderServer := api.NewOrderServer(orderService)
 
 	order_v1.RegisterOrderServiceServer(grpcServer, orderServer)
 	reflection.Register(grpcServer)
