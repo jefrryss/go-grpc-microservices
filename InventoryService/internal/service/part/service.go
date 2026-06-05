@@ -8,10 +8,10 @@ import (
 var _ service.Service = (*InventoryService)(nil)
 
 type InventoryService struct {
-	repo repository.Repo
+	repo repository.Repository
 }
 
-func NewInventoryService(r repository.Repo) *InventoryService {
+func NewInventoryService(r repository.Repository) *InventoryService {
 	return &InventoryService{
 		repo: r,
 	}

@@ -8,7 +8,7 @@ import (
 	repoModel "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository/model"
 )
 
-var _ repository.Repo = (*MemoryRepo)(nil)
+var _ repository.Repository = (*MemoryRepo)(nil)
 
 type MemoryRepo struct {
 	data map[uuid.UUID]*repoModel.PartRepo

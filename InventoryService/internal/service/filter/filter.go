@@ -3,7 +3,10 @@ package service
 import (
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/model"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/service"
 )
+
+var _ service.PartFilter = (*InventoryFilter)(nil)
 
 type InventoryFilter struct {
 	filters      *model.Filter

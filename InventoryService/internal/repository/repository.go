@@ -7,7 +7,7 @@ import (
 	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/model"
 )
 
-type Repo interface {
+type Repository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Part, error)
 	GetAll(ctx context.Context) ([]*model.Part, error)
 }
