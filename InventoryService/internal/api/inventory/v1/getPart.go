@@ -23,7 +23,7 @@ func (i *InventoryServer) GetPart(ctx context.Context, req *inventory_v1.GetPart
 
 	partProto, err := converter.ToProtoPart(part)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal part data (ID: %s): %v", part.PartID, err)
+		return nil, status.Errorf(codes.Internal, "failed to marshal part data (ID: %s): %v", parsedUUID, err)
 	}
 
 	return &inventory_v1.GetPartResponse{Part: partProto}, nil

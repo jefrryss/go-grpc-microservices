@@ -11,10 +11,15 @@ func (i *InventoryService) GetPart(ctx context.Context, id uuid.UUID) (*model.Pa
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	if id == uuid.Nil {
+		return nil, model.ErrNilIDPart
+	}
 	part, err := i.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
+	if part == nil {
+		return nil, model.ErrNotFound
+	}
 	return part, nil
 }
