@@ -1,13 +1,13 @@
 package delivery
 
 import (
-	"InventoryService/internal/repository"
-	"InventoryService/internal/service"
-	inventory_v1 "InventoryService/pkg/inventory/v1"
 	"context"
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/service"
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

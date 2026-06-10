@@ -1,16 +1,17 @@
 package main
 
 import (
-	"InventoryService/internal/delivery"
-	"InventoryService/internal/repository"
-	"InventoryService/internal/service"
-	inventory_v1 "InventoryService/pkg/inventory/v1"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/delivery"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository"
+	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/service"
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

@@ -1,11 +1,11 @@
 package delivery
 
 import (
-	"OrderService/internal/service"
-	order_v1 "OrderService/pkg/proto/order/v1"
 	"context"
 	"errors"
 
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/service"
+	order_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

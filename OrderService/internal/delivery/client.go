@@ -3,10 +3,10 @@ package delivery
 import (
 	"context"
 
-	inventory_v1 "InventoryService/pkg/inventory/v1"
-	"OrderService/internal/domain"
-	payment_v1 "PaymentService/pkg/payment/v1"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/domain"
 
+	inventory_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/inventory/v1"
+	payment_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/payment/v1"
 	"google.golang.org/grpc"
 )
 

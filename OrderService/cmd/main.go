@@ -1,10 +1,6 @@
 package main
 
 import (
-	"OrderService/internal/delivery"
-	"OrderService/internal/repository"
-	"OrderService/internal/service"
-	order_v1 "OrderService/pkg/proto/order/v1"
 	"context"
 	"fmt"
 	"log"
@@ -16,6 +12,10 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/delivery"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/service"
+	order_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"

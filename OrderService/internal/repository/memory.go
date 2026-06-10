@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"OrderService/internal/domain"
 	"context"
 	"errors"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/domain"
 )
 
 var (
