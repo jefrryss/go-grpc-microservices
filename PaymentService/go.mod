@@ -1,4 +1,4 @@
-module PaymentService
+module github.com/jefrryss/go-grpc-microservices/PaymentService
 
 go 1.25.1
 
@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/google/uuid v1.6.0 
+	github.com/google/uuid v1.6.0
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.34.0 // indirect

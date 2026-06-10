@@ -1,10 +1,11 @@
 package service
 
 import (
-	payment_v1 "PaymentService/pkg/payment/v1"
 	"context"
 	"errors"
 	"log"
+
+	payment_v1 "github.com/jefrryss/go-grpc-microservices/PaymentService/pkg/payment/v1"
 
 	"github.com/google/uuid"
 )

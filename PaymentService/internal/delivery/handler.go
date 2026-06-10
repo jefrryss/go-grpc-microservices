@@ -1,9 +1,10 @@
 package delivery
 
 import (
-	"PaymentService/internal/service"
-	payment_v1 "PaymentService/pkg/payment/v1"
 	"context"
+
+	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/service"
+	payment_v1 "github.com/jefrryss/go-grpc-microservices/PaymentService/pkg/payment/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

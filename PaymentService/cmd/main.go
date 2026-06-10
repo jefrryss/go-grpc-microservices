@@ -1,15 +1,16 @@
 package main
 
 import (
-	"PaymentService/internal/delivery"
-	"PaymentService/internal/service"
-	payment_v1 "PaymentService/pkg/payment/v1"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/delivery"
+	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/service"
+	payment_v1 "github.com/jefrryss/go-grpc-microservices/PaymentService/pkg/payment/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
