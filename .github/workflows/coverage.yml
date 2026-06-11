@@ -1,0 +1,57 @@
+name: Test Coverage Badges
+
+on:
+  push:
+    branches:
+      - main # Пайплайн будет запускаться при каждом пуше в main
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Разрешаем GitHub Actions делать коммиты в репозиторий
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐹 Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: 📊 Calculate Coverage and Update README
+        run: |
+          # Функция для подсчета покрытия и генерации ссылки на бейдж
+          get_badge() {
+            local dir=$1
+            cd $dir
+            # Запускаем тесты и собираем профиль
+            go test -coverprofile=cover.out ./... > /dev/null || true
+            
+            # Парсим итоговый процент (например, 85.5)
+            COV=$(go tool cover -func=cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+' || echo "0.0")
+            
+            # Выбираем цвет бейджа в зависимости от цифры
+            COLOR=$(echo "$COV" | awk '{if ($1 < 50) print "red"; else if ($1 < 80) print "yellow"; else print "brightgreen"}')
+            
+            # Возвращаем готовую HTML-картинку
+            echo "<img src=\"https://img.shields.io/badge/Coverage-${COV}%25-${COLOR}\" />"
+            cd ..
+          }
+
+          # Получаем бейджи для каждого сервиса
+          ORDER_BADGE=$(get_badge "OrderService")
+          INV_BADGE=$(get_badge "InventoryService")
+          PAY_BADGE=$(get_badge "PaymentService")
+
+          # Находим маркеры в README.md и заменяем всё, что идет после них, на новые бейджи
+          sed -i "s|.*|$ORDER_BADGE|" README.md
+          sed -i "s|.*|$INV_BADGE|" README.md
+          sed -i "s|.*|$PAY_BADGE|" README.md
+
+      - name: 🚀 Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: update test coverage badges [skip ci]"
+          file_pattern: "README.md"
