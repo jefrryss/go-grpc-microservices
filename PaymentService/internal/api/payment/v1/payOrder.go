@@ -11,17 +11,17 @@ import (
 )
 
 func (p *PaymentServer) PayOrder(ctx context.Context, req *payment_v1.PayOrderRequest) (*payment_v1.PayOrderResponse, error) {
-	orderUUID, err := uuid.Parse(req.OrderUuid)
+	orderUUID, err := uuid.Parse(req.GetOrderUuid())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid order uuid: %v", err)
 	}
 
-	userUUID, err := uuid.Parse(req.UserUuid)
+	userUUID, err := uuid.Parse(req.GetUserUuid())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid: %v", err)
 	}
 
-	paymentMethod, err := converter.ToDomainPaymentMethod(req.PaymentMethod)
+	paymentMethod, err := converter.ToDomainPaymentMethod(req.GetPaymentMethod())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "payment method error: %v", err)
 	}
