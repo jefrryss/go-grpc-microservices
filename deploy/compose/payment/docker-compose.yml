@@ -1,0 +1,20 @@
+services:
+  payment-service:
+    build:
+      context: ../../..
+      dockerfile: PaymentService/Dockerfile
+
+    image: payment-service:latest
+    container_name: payment_service
+
+    ports:
+      - "50053:50053"
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true
