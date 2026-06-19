@@ -1,55 +1,144 @@
-name: Test Coverage Badges
+name: Tests and Coverage
 
 on:
   push:
-    branches:
-      - main # Пайплайн будет запускаться при каждом пуше в main
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-and-coverage-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  update-badges:
+  tests:
+    name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Разрешаем GitHub Actions делать коммиты в репозиторий
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - OrderService
+          - InventoryService
+          - PaymentService
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - name: 🐹 Setup Go
-        uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version: "1.25.1"
+          cache-dependency-path: "**/go.sum"
 
-      - name: 📊 Calculate Coverage and Update README
+      - name: Run tests
+        working-directory: ${{ matrix.service }}
+        run: go test ./...
+
+  coverage:
+    name: Update coverage badges
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25.1"
+          cache-dependency-path: "**/go.sum"
+
+      - name: Calculate coverage
+        id: coverage
+        shell: bash
         run: |
-          get_badge() {
-            local dir=$1
-            echo "👉 ЗАПУСК ТЕСТОВ ДЛЯ: $dir"
-            cd $dir
-            
-            # Скачиваем зависимости, если их нет
-            go mod download
-            
-            # ЗАПУСКАЕМ ТЕСТЫ БЕЗ /dev/null, ЧТОБЫ ВИДЕТЬ ОШИБКИ В ЛОГАХ
-            go test -coverprofile=cover.out ./... || echo "❌ Ошибка при выполнении тестов в $dir"
-            
-            # Проверяем, создался ли файл cover.out
-            if [ -f "cover.out" ]; then
-              COV=$(go tool cover -func=cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+' || echo "0.0")
-            else
-              echo "❌ Файл cover.out не найден!"
-              COV="0.0"
+          set -euo pipefail
+
+          coverage_dir="${RUNNER_TEMP}/coverage"
+          mkdir -p "${coverage_dir}"
+
+          calculate_coverage() {
+            local service="$1"
+            local output_name="$2"
+            local profile="${coverage_dir}/${service}.out"
+
+            (
+              cd "${service}"
+              go test -covermode=atomic -coverprofile="${profile}" ./...
+            )
+
+            local value
+            value=$(go tool cover -func="${profile}" | awk '/^total:/ {gsub("%", "", $3); print $3}')
+
+            if [[ -z "${value}" ]]; then
+              echo "Coverage was not calculated for ${service}" >&2
+              exit 1
             fi
-            
-            COLOR=$(echo "$COV" | awk '{if ($1 < 50) print "red"; else if ($1 < 80) print "yellow"; else print "brightgreen"}')
-            echo "<img src=\"https://img.shields.io/badge/Coverage-${COV}%25-${COLOR}\" />"
-            cd ..
+
+            echo "${output_name}=${value}" >> "${GITHUB_OUTPUT}"
           }
 
-          ORDER_BADGE=$(get_badge "OrderService")
-          INV_BADGE=$(get_badge "InventoryService")
-          PAY_BADGE=$(get_badge "PaymentService")
+          calculate_coverage "OrderService" "order"
+          calculate_coverage "InventoryService" "inventory"
+          calculate_coverage "PaymentService" "payment"
 
-          sed -i "s|.*|$ORDER_BADGE|" README.md
-          sed -i "s|.*|$INV_BADGE|" README.md
-          sed -i "s|.*|$PAY_BADGE|" README.md
+      - name: Update README badges
+        shell: bash
+        env:
+          ORDER_COVERAGE: ${{ steps.coverage.outputs.order }}
+          INVENTORY_COVERAGE: ${{ steps.coverage.outputs.inventory }}
+          PAYMENT_COVERAGE: ${{ steps.coverage.outputs.payment }}
+        run: |
+          set -euo pipefail
+
+          update_badge() {
+            local service="$1"
+            local coverage="$2"
+            local color
+
+            color=$(awk -v value="${coverage}" 'BEGIN {
+              if (value < 50) print "red"
+              else if (value < 80) print "yellow"
+              else print "brightgreen"
+            }')
+
+            sed -i -E "/\\*\\*${service}\\*\\*/ s#Coverage-[0-9]+(\\.[0-9]+)?%25-[a-z]+#Coverage-${coverage}%25-${color}#" Readme.md
+          }
+
+          update_badge "OrderService" "${ORDER_COVERAGE}"
+          update_badge "InventoryService" "${INVENTORY_COVERAGE}"
+          update_badge "PaymentService" "${PAYMENT_COVERAGE}"
+
+          {
+            echo "## Test coverage"
+            echo
+            echo "| Service | Coverage |"
+            echo "| --- | ---: |"
+            echo "| OrderService | ${ORDER_COVERAGE}% |"
+            echo "| InventoryService | ${INVENTORY_COVERAGE}% |"
+            echo "| PaymentService | ${PAYMENT_COVERAGE}% |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Commit updated badges
+        shell: bash
+        run: |
+          if git diff --quiet -- Readme.md; then
+            echo "Coverage badges are already up to date"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Readme.md
+          git commit -m "docs(readme): update coverage badges"
+          git push origin HEAD:main
