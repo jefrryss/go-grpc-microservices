@@ -1,22 +1,18 @@
 package repository
 
 import (
-	"sync"
-
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository"
-	repoModel "github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository/model"
 )
 
-var _ repository.Repository = (*OrderMemory)(nil)
+var _ repository.Repository = (*OrderPostgres)(nil)
 
-type OrderMemory struct {
-	data map[uuid.UUID]*repoModel.OrderRepo
-	rw   sync.RWMutex
+type OrderPostgres struct {
+	db *pgxpool.Pool
 }
 
-func NewOrderMemory() *OrderMemory {
-	return &OrderMemory{
-		data: make(map[uuid.UUID]*repoModel.OrderRepo),
+func NewOrderPostgres(db *pgxpool.Pool) *OrderPostgres {
+	return &OrderPostgres{
+		db: db,
 	}
 }

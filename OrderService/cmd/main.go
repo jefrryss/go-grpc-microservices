@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v5/pgxpool"
 	api "github.com/jefrryss/go-grpc-microservices/OrderService/internal/api/order/v1"
 	clientInventory "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/inventory/v1"
 	clientPayment "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/payment/v1"
@@ -28,6 +29,25 @@ const HttpPort = 8080
 
 func main() {
 	log.Println("Starting OrderService initialization...")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+
+	db, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Fatalf("Failed to create PostgreSQL pool: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(ctx); err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	}
+	log.Println("Connected to PostgreSQL")
 
 	inventoryConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -52,8 +72,8 @@ func main() {
 	log.Printf("TCP listener created on port %d", GrpcPort)
 
 	grpcServer := grpc.NewServer()
-	memoryRepo := repository.NewOrderMemory()
-	orderService := service.NewOrderService(memoryRepo, paymentClient, inventoryClient)
+	orderRepository := repository.NewOrderPostgres(db)
+	orderService := service.NewOrderService(orderRepository, paymentClient, inventoryClient)
 	orderServer := api.NewOrderServer(orderService)
 
 	order_v1.RegisterOrderServiceServer(grpcServer, orderServer)
@@ -67,9 +87,6 @@ func main() {
 			log.Fatalf("gRPC server failed to serve: %v", err)
 		}
 	}()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
