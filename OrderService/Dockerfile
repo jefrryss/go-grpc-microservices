@@ -21,7 +21,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux \
     go build -trimpath -ldflags="-s -w" \
-    -o /out/order-service ./cmd
+    -o /out/order-service ./cmd && \
+    CGO_ENABLED=0 GOOS=linux \
+    go build -trimpath -ldflags="-s -w" \
+    -o /out/migrator ./cmd/migrator
 
 FROM alpine:3.22
 
@@ -34,7 +37,11 @@ WORKDIR /app
 COPY --from=builder --chown=app:app \
     /out/order-service ./order-service
 
+COPY --from=builder --chown=app:app \
+    /out/migrator ./migrator
+
 COPY --chown=app:app OrderService/api ./api
+COPY --chown=app:app OrderService/migrations ./migrations
 
 USER app
 

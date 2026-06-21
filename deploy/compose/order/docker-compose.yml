@@ -5,14 +5,39 @@ services:
       dockerfile: OrderService/Dockerfile
     image: order-service:latest
     container_name: order_service
+
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_NAME}?sslmode=disable"
+
     ports:
       - "50051:50051"
       - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      order-migrator:
+        condition: service_completed_successfully
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+  order-migrator:
+    image: order-service:latest
+    container_name: order_migrator
+    entrypoint: ["./migrator"]
+
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_NAME}?sslmode=disable"
+      MIGRATIONS_PATH: migrations
+
     depends_on:
       postgres:
         condition: service_healthy
 
-    restart: unless-stopped
+    restart: "no"
 
     networks:
       - microservices-net
