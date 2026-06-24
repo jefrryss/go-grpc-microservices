@@ -1,35 +1,77 @@
 package repository
 
 import (
+	"context"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/model"
-	repository "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository/model"
+	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
-func (s *RepositorySuite) TestGetPart_Success() {
-	idx1, _ := s.seedTestParts()
-	res, err := s.repository.GetByID(s.ctx, idx1)
-	s.NoError(err)
-	s.NotNil(res)
+func TestMongoRepoGetByID(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
-	s.Equal(res.PartID, idx1)
-}
+	mt.Run("success", func(mt *mtest.T) {
+		expected := testPart(uuid.New(), "Hyperion Engine V8", model.CategoryEngine)
+		namespace := mt.DB.Name() + "." + mt.Coll.Name()
+		mt.AddMockResponses(mtest.CreateCursorResponse(
+			0,
+			namespace,
+			mtest.FirstBatch,
+			toBSONDocument(mt.T, expected),
+		))
 
-func (s *RepositorySuite) TestGetPart_NotFounPart() {
-	uuid := uuid.New()
-	res, err := s.repository.GetByID(s.ctx, uuid)
-	s.Nil(res)
-	s.Error(err)
-	s.ErrorIs(err, model.ErrNotFound)
-}
+		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
+		part, err := repo.GetByID(context.Background(), expected.PartID)
 
-func (s *RepositorySuite) TestGetPart_InvalidMetaData() {
-	id := uuid.New()
-	s.repository.data[id] = &repository.PartRepo{
-		PartID:   id,
-		Metadata: []byte("invalid json"),
-	}
-	res, err := s.repository.GetByID(s.ctx, id)
-	s.Nil(res)
-	s.Contains(err.Error(), "failed to unmarshal metadata")
+		require.NoError(mt, err)
+		require.NotNil(mt, part)
+		require.Equal(mt, expected.PartID, part.PartID)
+		require.Equal(mt, expected.Name, part.Name)
+	})
+
+	mt.Run("not found", func(mt *mtest.T) {
+		namespace := mt.DB.Name() + "." + mt.Coll.Name()
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, namespace, mtest.FirstBatch))
+
+		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
+		part, err := repo.GetByID(context.Background(), uuid.New())
+
+		require.Nil(mt, part)
+		require.ErrorIs(mt, err, model.ErrNotFound)
+	})
+
+	mt.Run("conversion error", func(mt *mtest.T) {
+		expected := testPart(uuid.New(), "Broken part", model.CategoryEngine)
+		expected.Metadata = []byte("invalid json")
+		namespace := mt.DB.Name() + "." + mt.Coll.Name()
+		mt.AddMockResponses(mtest.CreateCursorResponse(
+			0,
+			namespace,
+			mtest.FirstBatch,
+			toBSONDocument(mt.T, expected),
+		))
+
+		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
+		part, err := repo.GetByID(context.Background(), expected.PartID)
+
+		require.Nil(mt, part)
+		require.ErrorContains(mt, err, "failed to unmarshal metadata")
+	})
+
+	mt.Run("database error", func(mt *mtest.T) {
+		mt.AddMockResponses(mtest.CreateCommandErrorResponse(mtest.CommandError{
+			Code:    123,
+			Message: "database unavailable",
+		}))
+
+		id := uuid.New()
+		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
+		part, err := repo.GetByID(context.Background(), id)
+
+		require.Nil(mt, part)
+		require.ErrorContains(mt, err, "find part")
+	})
 }

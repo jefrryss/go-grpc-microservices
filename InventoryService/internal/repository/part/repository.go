@@ -1,23 +1,18 @@
 package repository
 
 import (
-	"sync"
-
-	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository"
-	repoModel "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository/model"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var _ repository.Repository = (*MemoryRepo)(nil)
+var _ repository.Repository = (*MongoRepo)(nil)
 
-type MemoryRepo struct {
-	data map[uuid.UUID]*repoModel.PartRepo
-	rw   sync.RWMutex
+type MongoRepo struct {
+	collection *mongo.Collection
 }
 
-func NewMemoryRepo() *MemoryRepo {
-	m := &MemoryRepo{
-		data: make(map[uuid.UUID]*repoModel.PartRepo),
+func NewMongoRepo(db *mongo.Database, collectionName string) *MongoRepo {
+	return &MongoRepo{
+		collection: db.Collection(collectionName),
 	}
-	return m
 }

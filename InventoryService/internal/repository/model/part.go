@@ -7,21 +7,21 @@ import (
 )
 
 type PartRepo struct {
-	PartID              uuid.UUID
-	Name                string
-	Description         string
-	Price               float64
-	StockQuantity       int
-	Category            string
-	ManufacturerName    string
-	ManufacturerCountry string
-	ManufacturerWebsite string
-	Length              float64
-	Width               float64
-	Height              float64
-	Weight              float64
-	Tags                []string
-	Metadata            []byte
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	PartID              uuid.UUID `bson:"_id"`
+	Name                string    `bson:"name"`
+	Description         string    `bson:"description"`
+	Price               float64   `bson:"price"`
+	StockQuantity       int       `bson:"stock_quantity"`
+	Category            string    `bson:"category"`
+	ManufacturerName    string    `bson:"manufacturer_name"`
+	ManufacturerCountry string    `bson:"manufacturer_country"`
+	ManufacturerWebsite string    `bson:"manufacturer_website"`
+	Length              float64   `bson:"length"`
+	Width               float64   `bson:"width"`
+	Height              float64   `bson:"height"`
+	Weight              float64   `bson:"weight"`
+	Tags                []string  `bson:"tags"`
+	Metadata            []byte    `bson:"metadata,omitempty"`
+	CreatedAt           time.Time `bson:"created_at"`
+	UpdatedAt           time.Time `bson:"updated_at"`
 }
