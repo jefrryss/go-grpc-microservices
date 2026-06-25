@@ -7,6 +7,11 @@ services:
     image: inventory-service:latest
     container_name: inventory_service
 
+    environment:
+      MONGO_URI: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@inventory_mongo:27017/?authSource=admin"
+      MONGO_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_COLLECTION: parts
+
     ports:
       - "50052:50052"
 
