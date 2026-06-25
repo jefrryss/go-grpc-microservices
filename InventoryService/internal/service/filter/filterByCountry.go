@@ -3,7 +3,7 @@ package service
 import "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/model"
 
 func (i *InventoryFilter) filterByCountry(part *model.Part) bool {
-	if i.filters != nil || len(i.filters.Countries) == 0 {
+	if i.filters == nil || len(i.filters.Countries) == 0 {
 		return true
 	}
 
