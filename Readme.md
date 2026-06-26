@@ -5,5 +5,5 @@
 | Микросервис | Покрытие |
 | :--- | :--- |
 | **OrderService** | <img src="https://img.shields.io/badge/Coverage-41.3%25-red" /> |
-| **InventoryService** | <img src="https://img.shields.io/badge/Coverage-73.6%25-yellow" /> |
+| **InventoryService** | <img src="https://img.shields.io/badge/Coverage-78.7%25-yellow" /> |
 | **PaymentService** | <img src="https://img.shields.io/badge/Coverage-93.3%25-brightgreen" /> |
