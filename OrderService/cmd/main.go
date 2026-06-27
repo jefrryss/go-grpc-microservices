@@ -38,6 +38,16 @@ func main() {
 		log.Fatal("DATABASE_URL is required")
 	}
 
+	inventoryServiceAddress := os.Getenv("INVENTORY_SERVICE_ADDRESS")
+	if inventoryServiceAddress == "" {
+		inventoryServiceAddress = "localhost:50052"
+	}
+
+	paymentServiceAddress := os.Getenv("PAYMENT_SERVICE_ADDRESS")
+	if paymentServiceAddress == "" {
+		paymentServiceAddress = "localhost:50053"
+	}
+
 	db, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		log.Fatalf("Failed to create PostgreSQL pool: %v", err)
@@ -49,21 +59,21 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
-	inventoryConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	inventoryConn, err := grpc.NewClient(inventoryServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to InventoryService: %v", err)
 	}
 	defer inventoryConn.Close()
 	inventoryClient := clientInventory.NewGrpcInventoryClient(inventoryConn)
-	log.Println("Connected to InventoryService on localhost:50052")
+	log.Printf("InventoryService client configured for %s", inventoryServiceAddress)
 
-	paymentConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	paymentConn, err := grpc.NewClient(paymentServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to PaymentService: %v", err)
 	}
 	defer paymentConn.Close()
 	paymentClient := clientPayment.NewGrpcPaymentClient(paymentConn)
-	log.Println("Connected to PaymentService on localhost:50053")
+	log.Printf("PaymentService client configured for %s", paymentServiceAddress)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", GrpcPort))
 	if err != nil {
