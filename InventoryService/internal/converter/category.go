@@ -15,12 +15,15 @@ func ConvertProtoCatToModelCat(category inventory_v1.Category) (model.Category, 
 		return model.CategoryFuel, nil
 	case inventory_v1.Category_CATEGORY_PORTHOLE:
 		return model.CategoryPorthole, nil
+	case inventory_v1.Category_CATEGORY_WING:
+		return model.CategoryWing, nil
 	case inventory_v1.Category_CATEGORY_UNSPECIFIED:
 		return "", nil
 	default:
 		return "", fmt.Errorf("%w: unknown category code %d", model.ErrInvalidCategory, category)
 	}
 }
+
 func ToProtoCategory(domainCategory model.Category) inventory_v1.Category {
 	switch domainCategory {
 	case model.CategoryEngine:
