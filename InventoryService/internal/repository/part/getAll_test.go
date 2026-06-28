@@ -33,8 +33,8 @@ func TestMongoRepoGetAll(t *testing.T) {
 
 		require.NoError(mt, err)
 		require.Len(mt, parts, 2)
-		require.Equal(mt, first.PartID, parts[0].PartID)
-		require.Equal(mt, second.PartID, parts[1].PartID)
+		require.Equal(mt, first.PartID, parts[0].PartID.String())
+		require.Equal(mt, second.PartID, parts[1].PartID.String())
 	})
 
 	mt.Run("empty", func(mt *mtest.T) {
@@ -85,7 +85,7 @@ func testPart(id uuid.UUID, name string, category model.Category) repoModel.Part
 	now := time.Now().UTC().Truncate(time.Millisecond)
 
 	return repoModel.PartRepo{
-		PartID:              id,
+		PartID:              id.String(),
 		Name:                name,
 		Description:         "Test part",
 		Price:               100,

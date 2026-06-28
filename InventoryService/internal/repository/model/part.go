@@ -2,12 +2,10 @@ package repository
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type PartRepo struct {
-	PartID              uuid.UUID `bson:"_id"`
+	PartID              string    `bson:"_id"`
 	Name                string    `bson:"name"`
 	Description         string    `bson:"description"`
 	Price               float64   `bson:"price"`

@@ -15,7 +15,7 @@ import (
 
 func (m *MongoRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Part, error) {
 	var part repoModel.PartRepo
-	err := m.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&part)
+	err := m.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&part)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, model.ErrNotFound

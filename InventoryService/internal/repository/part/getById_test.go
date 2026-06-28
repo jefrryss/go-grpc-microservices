@@ -24,11 +24,12 @@ func TestMongoRepoGetByID(t *testing.T) {
 		))
 
 		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
-		part, err := repo.GetByID(context.Background(), expected.PartID)
+		partID := uuid.MustParse(expected.PartID)
+		part, err := repo.GetByID(context.Background(), partID)
 
 		require.NoError(mt, err)
 		require.NotNil(mt, part)
-		require.Equal(mt, expected.PartID, part.PartID)
+		require.Equal(mt, partID, part.PartID)
 		require.Equal(mt, expected.Name, part.Name)
 	})
 
@@ -55,7 +56,7 @@ func TestMongoRepoGetByID(t *testing.T) {
 		))
 
 		repo := NewMongoRepo(mt.DB, mt.Coll.Name())
-		part, err := repo.GetByID(context.Background(), expected.PartID)
+		part, err := repo.GetByID(context.Background(), uuid.MustParse(expected.PartID))
 
 		require.Nil(mt, part)
 		require.ErrorContains(mt, err, "failed to unmarshal metadata")

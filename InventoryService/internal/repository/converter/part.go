@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/InventoryService/internal/model"
 	repository "github.com/jefrryss/go-grpc-microservices/InventoryService/internal/repository/model"
 )
@@ -23,7 +24,7 @@ func ConvertModelPartToRepoPart(part *model.Part) (*repository.PartRepo, error) 
 	}
 
 	partRepo := &repository.PartRepo{
-		PartID:              part.PartID,
+		PartID:              part.PartID.String(),
 		Name:                part.Name,
 		Description:         part.Description,
 		Price:               part.Price,
@@ -50,6 +51,11 @@ func ConvertRepoPartToModelPart(part *repository.PartRepo) (*model.Part, error) 
 		return nil, model.ErrNilRepoPArt
 	}
 
+	partID, err := uuid.Parse(part.PartID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid repository part UUID %q: %w", part.PartID, err)
+	}
+
 	var metaData map[string]any
 	if len(part.Metadata) > 0 {
 		if err := json.Unmarshal(part.Metadata, &metaData); err != nil {
@@ -58,7 +64,7 @@ func ConvertRepoPartToModelPart(part *repository.PartRepo) (*model.Part, error) 
 	}
 
 	modelPart := &model.Part{
-		PartID:        part.PartID,
+		PartID:        partID,
 		Name:          part.Name,
 		Description:   part.Description,
 		Price:         part.Price,

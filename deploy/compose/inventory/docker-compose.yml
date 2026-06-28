@@ -18,8 +18,39 @@ services:
     depends_on:
       inventory_mongo:
         condition: service_healthy
+      inventory-seed:
+        condition: service_completed_successfully
 
     restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+  inventory-seed:
+    image: mongo:7.0.5
+    container_name: inventory_seed
+
+    command:
+      - mongosh
+      - --host
+      - inventory_mongo
+      - --username
+      - ${MONGO_INITDB_ROOT_USERNAME}
+      - --password
+      - ${MONGO_INITDB_ROOT_PASSWORD}
+      - --authenticationDatabase
+      - admin
+      - --file
+      - /seed/seed.js
+
+    volumes:
+      - ./init/seed.js:/seed/seed.js:ro
+
+    depends_on:
+      inventory_mongo:
+        condition: service_healthy
+
+    restart: "no"
 
     networks:
       - microservices-net
