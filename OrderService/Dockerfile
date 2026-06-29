@@ -41,6 +41,7 @@ COPY --from=builder --chown=app:app \
     /out/migrator ./migrator
 
 COPY --chown=app:app OrderService/api ./api
+COPY --chown=app:app shared/api/order/v1/order.openapi.yaml ./api/openapi/order.openapi.yaml
 COPY --chown=app:app OrderService/migrations ./migrations
 
 USER app

@@ -613,11 +613,11 @@ const file_order_v1_order_proto_rawDesc = "" +
 	"\x13PAYMENT_METHOD_CARD\x10\x01\x12\x16\n" +
 	"\x12PAYMENT_METHOD_SBP\x10\x02\x12\x1e\n" +
 	"\x1aPAYMENT_METHOD_CREDIT_CARD\x10\x03\x12!\n" +
-	"\x1dPAYMENT_METHOD_INVESTOR_MONEY\x10\x042\xd6\x03\n" +
+	"\x1dPAYMENT_METHOD_INVESTOR_MONEY\x10\x042\xdd\x03\n" +
 	"\fOrderService\x12e\n" +
 	"\vCreateOrder\x12\x1c.order.v1.CreateOrderRequest\x1a\x1d.order.v1.CreateOrderResponse\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/api/v1/orders\x12m\n" +
-	"\bPayOrder\x12\x19.order.v1.PayOrderRequest\x1a\x1a.order.v1.PayOrderResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/orders/{order_uuid}/pay\x12x\n" +
-	"\x0eGetOrderByUUID\x12\x1f.order.v1.GetOrderByUUIDRequest\x1a .order.v1.GetOrderByUUIDResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/orders/{order_uuid}\x12v\n" +
+	"\bPayOrder\x12\x19.order.v1.PayOrderRequest\x1a\x1a.order.v1.PayOrderResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/orders/{order_uuid}/pay\x12\x7f\n" +
+	"\x0eGetOrderByUUID\x12\x1f.order.v1.GetOrderByUUIDRequest\x1a .order.v1.GetOrderByUUIDResponse\"*\x82\xd3\xe4\x93\x02$b\x05order\x12\x1b/api/v1/orders/{order_uuid}\x12v\n" +
 	"\vCancelOrder\x12\x1c.order.v1.CancelOrderRequest\x1a\x1d.order.v1.CancelOrderResponse\"*\x82\xd3\xe4\x93\x02$\"\"/api/v1/orders/{order_uuid}/cancelB$Z\"OrderService/pkg/order/v1;order_v1b\x06proto3"
 
 var (

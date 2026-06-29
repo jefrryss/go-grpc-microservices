@@ -33,7 +33,7 @@ func (o *OrderService) CreateOrder(ctx context.Context, userUUID uuid.UUID, part
 	for reqUUIDStr, count := range requestedCounts {
 		part, exists := availableParts[reqUUIDStr]
 		if !exists {
-			return uuid.Nil, 0, fmt.Errorf("part %s not found", reqUUIDStr)
+			return uuid.Nil, 0, fmt.Errorf("part %s not found: %w", reqUUIDStr, model.ErrPartNotFound)
 		}
 		totalPrice += float64(count) * part.Price
 	}

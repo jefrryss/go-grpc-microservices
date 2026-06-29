@@ -1,10 +1,16 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "payment/v1/payment.proto",
+    "title": "inventory/v1/inventory.proto",
     "version": "version not set"
   },
   "tags": [
+    {
+      "name": "InventoryService"
+    },
+    {
+      "name": "OrderService"
+    },
     {
       "name": "PaymentService"
     }
@@ -15,8 +21,191 @@
   "produces": [
     "application/json"
   ],
-  "paths": {},
+  "paths": {
+    "/api/v1/orders": {
+      "post": {
+        "summary": "CreateOrder создает новый заказ для пользователя.",
+        "operationId": "OrderService_CreateOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateOrderRequest содержит данные, необходимые для создания нового заказа.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}": {
+      "get": {
+        "summary": "GetOrderByUUID возвращает подробную информацию о заказе по его идентификатору.",
+        "operationId": "OrderService_GetOrderByUUID",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/v1Order"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - уникальный идентификатор искомого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}/cancel": {
+      "post": {
+        "summary": "CancelOrder отменяет заказ, если он еще не был оплачен.",
+        "operationId": "OrderService_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - уникальный идентификатор отменяемого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_uuid}/pay": {
+      "post": {
+        "summary": "PayOrder инициирует процесс оплаты для существующего заказа.",
+        "operationId": "OrderService_PayOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/orderv1PayOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_uuid",
+            "description": "order_uuid - идентификатор оплачиваемого заказа.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1OrderServicePayOrderBody"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    }
+  },
   "definitions": {
+    "orderv1PayOrderResponse": {
+      "type": "object",
+      "properties": {
+        "transaction_uuid": {
+          "type": "string",
+          "description": "transaction_uuid - идентификатор созданной платежной транзакции."
+        }
+      },
+      "description": "PayOrderResponse возвращает информацию о транзакции."
+    },
+    "orderv1PaymentMethod": {
+      "type": "string",
+      "enum": [
+        "PAYMENT_METHOD_UNKNOWN",
+        "PAYMENT_METHOD_CARD",
+        "PAYMENT_METHOD_SBP",
+        "PAYMENT_METHOD_CREDIT_CARD",
+        "PAYMENT_METHOD_INVESTOR_MONEY"
+      ],
+      "default": "PAYMENT_METHOD_UNKNOWN",
+      "description": "PaymentMethod описывает доступные способы оплаты в системе.\n\n - PAYMENT_METHOD_UNKNOWN: UNKNOWN - способ оплаты не указан или неизвестен (значение по умолчанию).\n - PAYMENT_METHOD_CARD: CARD - оплата банковской картой.\n - PAYMENT_METHOD_SBP: SBP - оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: CREDIT_CARD - оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: INVESTOR_MONEY - оплата средствами инвестора."
+    },
+    "paymentv1PayOrderResponse": {
+      "type": "object",
+      "properties": {
+        "transaction_uuid": {
+          "type": "string",
+          "description": "transaction_uuid уникальный идентификатор созданной транзакции."
+        }
+      },
+      "description": "PayOrderResponse содержит результат успешного проведения оплаты."
+    },
+    "paymentv1PaymentMethod": {
+      "type": "string",
+      "enum": [
+        "PAYMENT_METHOD_UNSPECIFIED",
+        "PAYMENT_METHOD_CARD",
+        "PAYMENT_METHOD_SBP",
+        "PAYMENT_METHOD_CREDIT_CARD",
+        "PAYMENT_METHOD_INVESTOR_MONEY"
+      ],
+      "default": "PAYMENT_METHOD_UNSPECIFIED",
+      "description": "PaymentMethod описывает доступные способы оплаты заказа.\n\n - PAYMENT_METHOD_UNSPECIFIED: PAYMENT_METHOD_UNSPECIFIED способ оплаты не указан (значение по умолчанию).\n - PAYMENT_METHOD_CARD: PAYMENT_METHOD_CARD оплата стандартной банковской картой.\n - PAYMENT_METHOD_SBP: PAYMENT_METHOD_SBP оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: PAYMENT_METHOD_CREDIT_CARD оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: PAYMENT_METHOD_INVESTOR_MONEY оплата с использованием средств инвестора."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -45,27 +234,277 @@
         }
       }
     },
-    "v1PayOrderResponse": {
+    "v1CancelOrderResponse": {
       "type": "object",
-      "properties": {
-        "transaction_uuid": {
-          "type": "string",
-          "description": "transaction_uuid уникальный идентификатор созданной транзакции."
-        }
-      },
-      "description": "PayOrderResponse содержит результат успешного проведения оплаты."
+      "description": "CancelOrderResponse возвращает пустой ответ при успешной отмене (204 No Content)."
     },
-    "v1PaymentMethod": {
+    "v1Category": {
       "type": "string",
       "enum": [
-        "PAYMENT_METHOD_UNSPECIFIED",
-        "PAYMENT_METHOD_CARD",
-        "PAYMENT_METHOD_SBP",
-        "PAYMENT_METHOD_CREDIT_CARD",
-        "PAYMENT_METHOD_INVESTOR_MONEY"
+        "CATEGORY_UNSPECIFIED",
+        "CATEGORY_ENGINE",
+        "CATEGORY_FUEL",
+        "CATEGORY_PORTHOLE",
+        "CATEGORY_WING"
       ],
-      "default": "PAYMENT_METHOD_UNSPECIFIED",
-      "description": "PaymentMethod описывает доступные способы оплаты заказа.\n\n - PAYMENT_METHOD_UNSPECIFIED: PAYMENT_METHOD_UNSPECIFIED способ оплаты не указан (значение по умолчанию).\n - PAYMENT_METHOD_CARD: PAYMENT_METHOD_CARD оплата стандартной банковской картой.\n - PAYMENT_METHOD_SBP: PAYMENT_METHOD_SBP оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: PAYMENT_METHOD_CREDIT_CARD оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: PAYMENT_METHOD_INVESTOR_MONEY оплата с использованием средств инвестора."
+      "default": "CATEGORY_UNSPECIFIED",
+      "description": "Category — перечисление доступных категорий деталей космического корабля.\n\n - CATEGORY_UNSPECIFIED: Неизвестная категория или категория не указана\n - CATEGORY_ENGINE: Двигатели и элементы двигательной установки\n - CATEGORY_FUEL: Топливные баки и системы подачи топлива\n - CATEGORY_PORTHOLE: Иллюминаторы и смотровые окна\n - CATEGORY_WING: Крылья и аэродинамические элементы обшивки"
+    },
+    "v1CreateOrderRequest": {
+      "type": "object",
+      "properties": {
+        "user_uuid": {
+          "type": "string",
+          "description": "user_uuid - идентификатор пользователя-покупателя."
+        },
+        "part_uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "part_uuids - список идентификаторов товаров для заказа."
+        }
+      },
+      "description": "CreateOrderRequest содержит данные, необходимые для создания нового заказа."
+    },
+    "v1CreateOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order_uuid": {
+          "type": "string",
+          "description": "order_uuid - присвоенный уникальный идентификатор нового заказа."
+        },
+        "total_price": {
+          "type": "number",
+          "format": "double",
+          "description": "total_price - рассчитанная итоговая стоимость."
+        }
+      },
+      "description": "CreateOrderResponse возвращает базовую информацию о только что созданном заказе."
+    },
+    "v1Dimensions": {
+      "type": "object",
+      "properties": {
+        "length": {
+          "type": "number",
+          "format": "double"
+        },
+        "width": {
+          "type": "number",
+          "format": "double"
+        },
+        "height": {
+          "type": "number",
+          "format": "double"
+        },
+        "weight": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "description": "Dimensions — физические характеристики и габариты детали."
+    },
+    "v1GetOrderByUUIDResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "GetOrderByUUIDResponse содержит полную информацию о заказе."
+    },
+    "v1GetPartResponse": {
+      "type": "object",
+      "properties": {
+        "part": {
+          "$ref": "#/definitions/v1Part"
+        }
+      },
+      "description": "GetPartResponse — ответ на запрос получения детали."
+    },
+    "v1ListPartsResponse": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Part"
+          }
+        }
+      },
+      "description": "ListPartsResponse — ответ со списком найденных деталей."
+    },
+    "v1Manufacturer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        }
+      },
+      "description": "Manufacturer — информация о компании, создавшей деталь."
+    },
+    "v1Order": {
+      "type": "object",
+      "properties": {
+        "order_uuid": {
+          "type": "string",
+          "description": "order_uuid - уникальный идентификатор заказа."
+        },
+        "user_uuid": {
+          "type": "string",
+          "description": "user_uuid - идентификатор пользователя, создавшего заказ."
+        },
+        "part_uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "part_uuids - список идентификаторов заказанных деталей/товаров."
+        },
+        "total_price": {
+          "type": "number",
+          "format": "double",
+          "description": "total_price - общая стоимость заказа."
+        },
+        "transaction_uuid": {
+          "type": "string",
+          "description": "transaction_uuid - идентификатор транзакции оплаты (если есть)."
+        },
+        "payment_method": {
+          "$ref": "#/definitions/orderv1PaymentMethod",
+          "description": "payment_method - выбранный способ оплаты."
+        },
+        "status": {
+          "type": "string",
+          "description": "status - текущий статус заказа."
+        }
+      },
+      "title": "Order - заказ, который создает пользователь"
+    },
+    "v1OrderServicePayOrderBody": {
+      "type": "object",
+      "properties": {
+        "payment_method": {
+          "$ref": "#/definitions/orderv1PaymentMethod",
+          "description": "payment_method - способ, которым клиент хочет оплатить заказ."
+        }
+      },
+      "description": "PayOrderRequest содержит параметры для старта оплаты."
+    },
+    "v1Part": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "stock_quantity": {
+          "type": "string",
+          "format": "int64"
+        },
+        "category": {
+          "$ref": "#/definitions/v1Category"
+        },
+        "dimensions": {
+          "$ref": "#/definitions/v1Dimensions"
+        },
+        "manufacturer": {
+          "$ref": "#/definitions/v1Manufacturer"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1Value"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Part — структура, описывающая деталь космического корабля."
+    },
+    "v1PartsFilter": {
+      "type": "object",
+      "properties": {
+        "uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Category"
+          }
+        },
+        "manufacturer_countries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "PartsFilter — фильтр для поиска деталей."
+    },
+    "v1Value": {
+      "type": "object",
+      "properties": {
+        "string_value": {
+          "type": "string"
+        },
+        "int64_value": {
+          "type": "string",
+          "format": "int64"
+        },
+        "double_value": {
+          "type": "number",
+          "format": "double"
+        },
+        "bool_value": {
+          "type": "boolean"
+        }
+      },
+      "description": "Value — контейнер для хранения гибких метаданных одного из четырех типов."
     }
   }
 }

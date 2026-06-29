@@ -239,7 +239,7 @@ func RegisterOrderServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_OrderService_GetOrderByUUID_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_OrderService_GetOrderByUUID_0(annotatedContext, mux, outboundMarshaler, w, req, response_OrderService_GetOrderByUUID_0{resp.(*GetOrderByUUIDResponse)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_OrderService_CancelOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -350,7 +350,7 @@ func RegisterOrderServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_OrderService_GetOrderByUUID_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_OrderService_GetOrderByUUID_0(annotatedContext, mux, outboundMarshaler, w, req, response_OrderService_GetOrderByUUID_0{resp.(*GetOrderByUUIDResponse)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_OrderService_CancelOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -370,6 +370,14 @@ func RegisterOrderServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		forward_OrderService_CancelOrder_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	return nil
+}
+
+type response_OrderService_GetOrderByUUID_0 struct {
+	*GetOrderByUUIDResponse
+}
+
+func (m response_OrderService_GetOrderByUUID_0) XXX_ResponseBody() interface{} {
+	return m.Order
 }
 
 var (

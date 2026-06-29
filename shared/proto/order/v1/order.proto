@@ -28,6 +28,7 @@ service OrderService {
     rpc GetOrderByUUID(GetOrderByUUIDRequest) returns(GetOrderByUUIDResponse) {
         option (google.api.http) = {
             get: "/api/v1/orders/{order_uuid}"
+            response_body: "order"
         };
     }
 

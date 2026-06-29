@@ -24,7 +24,7 @@ func (o *OrderServer) GetOrderByUUID(ctx context.Context, req *order_v1.GetOrder
 	}
 	order, err := o.service.GetOrder(ctx, orderId)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "order not found: %v", err)
+		return nil, mapGetOrderError(err)
 	}
 
 	return &order_v1.GetOrderByUUIDResponse{

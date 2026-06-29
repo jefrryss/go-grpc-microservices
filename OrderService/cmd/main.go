@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 const GrpcPort = 50051
@@ -98,7 +101,12 @@ func main() {
 		}
 	}()
 
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{UseProtoNames: true},
+		}),
+		runtime.WithForwardResponseOption(forwardHTTPStatus),
+	)
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	grpcEndpoint := fmt.Sprintf("localhost:%d", GrpcPort)
 
@@ -109,6 +117,9 @@ func main() {
 	})
 	rootMux.HandleFunc("/swagger/order.swagger.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "api/swagger/order.swagger.json")
+	})
+	rootMux.HandleFunc("/openapi/order.openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "api/openapi/order.openapi.yaml")
 	})
 
 	rootMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -152,4 +163,27 @@ func main() {
 	log.Println("Shutting down gRPC server...")
 	grpcServer.GracefulStop()
 	log.Println("gRPC server stopped successfully")
+}
+
+func forwardHTTPStatus(ctx context.Context, w http.ResponseWriter, _ proto.Message) error {
+	serverMetadata, ok := runtime.ServerMetadataFromContext(ctx)
+	if !ok {
+		return nil
+	}
+
+	values := serverMetadata.HeaderMD.Get("x-http-code")
+	if len(values) == 0 {
+		return nil
+	}
+
+	statusCode, err := strconv.Atoi(values[0])
+	if err != nil {
+		return fmt.Errorf("parse HTTP status code: %w", err)
+	}
+
+	delete(serverMetadata.HeaderMD, "x-http-code")
+	w.Header().Del("Grpc-Metadata-X-Http-Code")
+	w.WriteHeader(statusCode)
+
+	return nil
 }

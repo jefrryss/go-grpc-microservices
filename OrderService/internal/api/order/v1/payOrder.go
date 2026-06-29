@@ -29,7 +29,7 @@ func (o *OrderServer) PayOrder(ctx context.Context, req *order_v1.PayOrderReques
 	paymentMethod := converter.ToDomainPaymentMethod(req.GetPaymentMethod())
 	trancID, err := o.service.PayOrder(ctx, orderId, paymentMethod)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to pay order: %v", err)
+		return nil, mapPayOrderError(err)
 	}
 	return &order_v1.PayOrderResponse{TransactionUuid: trancID.String()}, nil
 }

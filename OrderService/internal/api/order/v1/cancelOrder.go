@@ -7,7 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/model"
 	order_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -34,6 +36,8 @@ func (o *OrderServer) CancelOrder(ctx context.Context, req *order_v1.CancelOrder
 		}
 		return nil, status.Errorf(codes.Internal, "failed to cancel order: %v", err)
 	}
+
+	_ = grpc.SetHeader(ctx, metadata.Pairs("x-http-code", "204"))
 
 	return &order_v1.CancelOrderResponse{}, nil
 }

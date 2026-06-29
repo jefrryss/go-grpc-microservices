@@ -35,7 +35,7 @@ func (o *OrderServer) CreateOrder(ctx context.Context, request *order_v1.CreateO
 	}
 	uuid, totalPrice, err := o.service.CreateOrder(ctx, useID, partUuids)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to create order: %v", err)
+		return nil, mapCreateOrderError(err)
 	}
 
 	return &order_v1.CreateOrderResponse{OrderUuid: uuid.String(), TotalPrice: totalPrice}, nil
