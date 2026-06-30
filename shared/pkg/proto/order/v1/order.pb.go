@@ -26,8 +26,8 @@ const (
 type PaymentMethod int32
 
 const (
-	// UNKNOWN - способ оплаты не указан или неизвестен (значение по умолчанию).
-	PaymentMethod_PAYMENT_METHOD_UNKNOWN PaymentMethod = 0
+	// UNSPECIFIED - способ оплаты не указан (значение по умолчанию).
+	PaymentMethod_PAYMENT_METHOD_UNSPECIFIED PaymentMethod = 0
 	// CARD - оплата банковской картой.
 	PaymentMethod_PAYMENT_METHOD_CARD PaymentMethod = 1
 	// SBP - оплата через Систему быстрых платежей.
@@ -41,14 +41,14 @@ const (
 // Enum value maps for PaymentMethod.
 var (
 	PaymentMethod_name = map[int32]string{
-		0: "PAYMENT_METHOD_UNKNOWN",
+		0: "PAYMENT_METHOD_UNSPECIFIED",
 		1: "PAYMENT_METHOD_CARD",
 		2: "PAYMENT_METHOD_SBP",
 		3: "PAYMENT_METHOD_CREDIT_CARD",
 		4: "PAYMENT_METHOD_INVESTOR_MONEY",
 	}
 	PaymentMethod_value = map[string]int32{
-		"PAYMENT_METHOD_UNKNOWN":        0,
+		"PAYMENT_METHOD_UNSPECIFIED":    0,
 		"PAYMENT_METHOD_CARD":           1,
 		"PAYMENT_METHOD_SBP":            2,
 		"PAYMENT_METHOD_CREDIT_CARD":    3,
@@ -347,7 +347,7 @@ func (x *Order) GetPaymentMethod() PaymentMethod {
 	if x != nil {
 		return x.PaymentMethod
 	}
-	return PaymentMethod_PAYMENT_METHOD_UNKNOWN
+	return PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
 }
 
 func (x *Order) GetStatus() string {
@@ -519,7 +519,7 @@ func (x *PayOrderRequest) GetPaymentMethod() PaymentMethod {
 	if x != nil {
 		return x.PaymentMethod
 	}
-	return PaymentMethod_PAYMENT_METHOD_UNKNOWN
+	return PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
 }
 
 // PayOrderResponse возвращает информацию о транзакции.
@@ -607,9 +607,9 @@ const file_order_v1_order_proto_rawDesc = "" +
 	"order_uuid\x18\x01 \x01(\tR\torderUuid\x12>\n" +
 	"\x0epayment_method\x18\x02 \x01(\x0e2\x17.order.v1.PaymentMethodR\rpaymentMethod\"=\n" +
 	"\x10PayOrderResponse\x12)\n" +
-	"\x10transaction_uuid\x18\x01 \x01(\tR\x0ftransactionUuid*\x9f\x01\n" +
-	"\rPaymentMethod\x12\x1a\n" +
-	"\x16PAYMENT_METHOD_UNKNOWN\x10\x00\x12\x17\n" +
+	"\x10transaction_uuid\x18\x01 \x01(\tR\x0ftransactionUuid*\xa3\x01\n" +
+	"\rPaymentMethod\x12\x1e\n" +
+	"\x1aPAYMENT_METHOD_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PAYMENT_METHOD_CARD\x10\x01\x12\x16\n" +
 	"\x12PAYMENT_METHOD_SBP\x10\x02\x12\x1e\n" +
 	"\x1aPAYMENT_METHOD_CREDIT_CARD\x10\x03\x12!\n" +

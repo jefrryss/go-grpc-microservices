@@ -32,9 +32,9 @@ func ToProtoOrderPaymentMethod(method model.PaymentMethod) order_v1.PaymentMetho
 	case model.PaymentMethodInvestorMoney:
 		return order_v1.PaymentMethod_PAYMENT_METHOD_INVESTOR_MONEY
 	case model.PaymentMethodUnknown:
-		return order_v1.PaymentMethod_PAYMENT_METHOD_UNKNOWN
+		return order_v1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
 	default:
-		return order_v1.PaymentMethod_PAYMENT_METHOD_UNKNOWN
+		return order_v1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
 	}
 }
 
@@ -48,7 +48,7 @@ func ToDomainPaymentMethod(protoMethod order_v1.PaymentMethod) model.PaymentMeth
 		return model.PaymentMethodCreditCard
 	case order_v1.PaymentMethod_PAYMENT_METHOD_INVESTOR_MONEY:
 		return model.PaymentMethodInvestorMoney
-	case order_v1.PaymentMethod_PAYMENT_METHOD_UNKNOWN:
+	case order_v1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED:
 		return model.PaymentMethodUnknown
 	default:
 		return model.PaymentMethodUnknown

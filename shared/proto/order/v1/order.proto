@@ -110,8 +110,8 @@ message PayOrderResponse {
 
 // PaymentMethod описывает доступные способы оплаты в системе.
 enum PaymentMethod {
-    // UNKNOWN - способ оплаты не указан или неизвестен (значение по умолчанию).
-    PAYMENT_METHOD_UNKNOWN = 0;
+    // UNSPECIFIED - способ оплаты не указан (значение по умолчанию).
+    PAYMENT_METHOD_UNSPECIFIED = 0;
     // CARD - оплата банковской картой.
     PAYMENT_METHOD_CARD = 1;
     // SBP - оплата через Систему быстрых платежей.

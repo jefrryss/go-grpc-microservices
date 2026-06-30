@@ -175,14 +175,14 @@
     "orderv1PaymentMethod": {
       "type": "string",
       "enum": [
-        "PAYMENT_METHOD_UNKNOWN",
+        "PAYMENT_METHOD_UNSPECIFIED",
         "PAYMENT_METHOD_CARD",
         "PAYMENT_METHOD_SBP",
         "PAYMENT_METHOD_CREDIT_CARD",
         "PAYMENT_METHOD_INVESTOR_MONEY"
       ],
-      "default": "PAYMENT_METHOD_UNKNOWN",
-      "description": "PaymentMethod описывает доступные способы оплаты в системе.\n\n - PAYMENT_METHOD_UNKNOWN: UNKNOWN - способ оплаты не указан или неизвестен (значение по умолчанию).\n - PAYMENT_METHOD_CARD: CARD - оплата банковской картой.\n - PAYMENT_METHOD_SBP: SBP - оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: CREDIT_CARD - оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: INVESTOR_MONEY - оплата средствами инвестора."
+      "default": "PAYMENT_METHOD_UNSPECIFIED",
+      "description": "PaymentMethod описывает доступные способы оплаты в системе.\n\n - PAYMENT_METHOD_UNSPECIFIED: UNSPECIFIED - способ оплаты не указан (значение по умолчанию).\n - PAYMENT_METHOD_CARD: CARD - оплата банковской картой.\n - PAYMENT_METHOD_SBP: SBP - оплата через Систему быстрых платежей.\n - PAYMENT_METHOD_CREDIT_CARD: CREDIT_CARD - оплата кредитной картой.\n - PAYMENT_METHOD_INVESTOR_MONEY: INVESTOR_MONEY - оплата средствами инвестора."
     },
     "paymentv1PayOrderResponse": {
       "type": "object",

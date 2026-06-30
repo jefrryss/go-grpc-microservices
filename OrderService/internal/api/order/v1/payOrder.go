@@ -19,7 +19,7 @@ func (o *OrderServer) PayOrder(ctx context.Context, req *order_v1.PayOrderReques
 		return nil, status.Error(codes.InvalidArgument, "order_uuid is required")
 	}
 
-	if req.PaymentMethod == order_v1.PaymentMethod_PAYMENT_METHOD_UNKNOWN {
+	if req.PaymentMethod == order_v1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED {
 		return nil, status.Error(codes.InvalidArgument, "payment method cant be unknown")
 	}
 	orderId, err := uuid.Parse(req.GetOrderUuid())
