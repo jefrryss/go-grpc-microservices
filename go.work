@@ -4,5 +4,6 @@ use (
 	./InventoryService
 	./OrderService
 	./PaymentService
+	./platform
 	./shared
 )
