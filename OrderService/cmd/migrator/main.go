@@ -8,7 +8,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/migrator"
+	platformMigrator "github.com/jefrryss/go-grpc-microservices/platform/pkg/migrator/pg"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
 
-	if err := migrator.NewMigrator(db, migrationsPath).Up(); err != nil {
+	if err := platformMigrator.New(db, migrationsPath).Up(ctx); err != nil {
 		log.Fatalf("Failed to apply migrations: %v", err)
 	}
 

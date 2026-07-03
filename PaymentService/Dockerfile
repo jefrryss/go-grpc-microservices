@@ -4,6 +4,7 @@ WORKDIR /src
 
 COPY PaymentService/go.mod PaymentService/go.sum ./PaymentService/
 COPY shared/go.mod shared/go.sum ./shared/
+COPY platform/go.mod platform/go.sum ./platform/
 
 WORKDIR /src/PaymentService
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -12,6 +13,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 WORKDIR /src
 COPY PaymentService ./PaymentService
 COPY shared ./shared
+COPY platform ./platform
 
 WORKDIR /src/PaymentService
 RUN --mount=type=cache,target=/go/pkg/mod \

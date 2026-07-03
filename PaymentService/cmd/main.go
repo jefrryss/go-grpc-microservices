@@ -1,50 +1,36 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net"
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	api "github.com/jefrryss/go-grpc-microservices/PaymentService/internal/api/payment/v1"
-	service "github.com/jefrryss/go-grpc-microservices/PaymentService/internal/service/payment"
-	payment_v1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/payment/v1"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/app"
+	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/config"
 )
 
-const grpcPort int = 50053
-
 func main() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
-	if err != nil {
-		fmt.Printf("Error started tcp port: %v", err)
-		return
+	if err := config.Load(os.Getenv("CONFIG_PATH")); err != nil {
+		panic(err)
 	}
-	grpcServer := grpc.NewServer()
-	paymentService := service.NewPaymentService()
-	paymentServer := api.NewPaymentServer(paymentService)
 
-	payment_v1.RegisterPaymentServiceServer(grpcServer, paymentServer)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	reflection.Register(grpcServer)
+	application, err := app.New(config.AppConfig())
+	if err != nil {
+		panic(err)
+	}
 
-	go func() {
-		fmt.Printf("Server started on port:%d\n", grpcPort)
-		err := grpcServer.Serve(listener)
-		if err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
+	if err := application.Run(ctx); err != nil {
+		panic(err)
+	}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-
-	<-quit
-	grpcServer.GracefulStop()
-	fmt.Println("\nserver stopped")
-
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := application.Close(shutdownCtx); err != nil {
+		panic(err)
+	}
 }

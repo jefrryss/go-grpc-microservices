@@ -4,6 +4,7 @@ WORKDIR /src
 
 COPY OrderService/go.mod OrderService/go.sum ./OrderService/
 COPY shared/go.mod shared/go.sum ./shared/
+COPY platform/go.mod platform/go.sum ./platform/
 
 WORKDIR /src/OrderService
 
@@ -14,6 +15,7 @@ WORKDIR /src
 
 COPY OrderService ./OrderService
 COPY shared ./shared
+COPY platform ./platform
 
 WORKDIR /src/OrderService
 

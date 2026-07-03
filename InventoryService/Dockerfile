@@ -4,6 +4,7 @@ WORKDIR /src
 
 COPY InventoryService/go.mod InventoryService/go.sum ./InventoryService/
 COPY shared/go.mod shared/go.sum ./shared/
+COPY platform/go.mod platform/go.sum ./platform/
 
 WORKDIR /src/InventoryService
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -12,6 +13,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 WORKDIR /src
 COPY InventoryService ./InventoryService
 COPY shared ./shared
+COPY platform ./platform
 
 WORKDIR /src/InventoryService
 RUN --mount=type=cache,target=/go/pkg/mod \
