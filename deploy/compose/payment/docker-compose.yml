@@ -7,6 +7,12 @@ services:
     image: payment-service:latest
     container_name: payment_service
 
+    environment:
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: ${GRPC_PORT:-50053}
+      LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
+      LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+
     ports:
       - "50053:50053"
 

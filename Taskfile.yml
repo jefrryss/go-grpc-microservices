@@ -92,6 +92,11 @@ tasks:
       - '{{.BUF}} generate'
       - cp ../api/swagger/order.swagger.json ../../OrderService/api/swagger/order.swagger.json
 
+  env:generate:
+    desc: "Генерирует .env файлы для Docker Compose"
+    cmds:
+      - ./deploy/env/generate-env.sh
+
   grpcurl:install:
     desc: "Устанавливает grpcurl в каталог bin"
     cmds:

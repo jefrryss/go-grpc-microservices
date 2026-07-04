@@ -11,6 +11,10 @@ services:
       MONGO_URI: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@inventory_mongo:27017/?authSource=admin"
       MONGO_DATABASE: ${MONGO_INITDB_DATABASE}
       MONGO_COLLECTION: parts
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: ${GRPC_PORT:-50052}
+      LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
+      LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
 
     ports:
       - "50052:50052"
