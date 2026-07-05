@@ -91,3 +91,5 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) Close(ctx context.Context) error { return a.closer.Close(ctx) }
+
+func (a *App) Address() string { return a.listener.Addr().String() }

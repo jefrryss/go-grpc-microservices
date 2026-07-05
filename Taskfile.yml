@@ -319,6 +319,11 @@ tasks:
         done
         exit $ERR
 
+  test-integration:
+    desc: "Запускает интеграционные тесты через Testcontainers"
+    cmds:
+      - go test -tags=integration ./InventoryService/tests/integration ./OrderService/tests/integration
+
   test-coverage:
     desc: "Тесты с покрытием бизнес-логики (service/repository), отчёт по каждому модулю + общий"
     cmds:
