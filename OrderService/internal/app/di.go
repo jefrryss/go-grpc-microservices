@@ -5,6 +5,7 @@ import (
 	api "github.com/jefrryss/go-grpc-microservices/OrderService/internal/api/order/v1"
 	clientInventory "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/inventory/v1"
 	clientPayment "github.com/jefrryss/go-grpc-microservices/OrderService/internal/client/grpc/payment/v1"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/messaging"
 	repository "github.com/jefrryss/go-grpc-microservices/OrderService/internal/repository/order"
 	service "github.com/jefrryss/go-grpc-microservices/OrderService/internal/service/order"
 	orderV1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
@@ -18,10 +19,11 @@ type container struct {
 	repository    *repository.OrderPostgres
 	service       *service.OrderService
 	api           orderV1.OrderServiceServer
+	orderPaid     *messaging.OrderPaidPublisher
 }
 
-func newContainer(database *pgxpool.Pool, inventoryConn, paymentConn *grpc.ClientConn) *container {
-	return &container{database: database, inventoryConn: inventoryConn, paymentConn: paymentConn}
+func newContainer(database *pgxpool.Pool, inventoryConn, paymentConn *grpc.ClientConn, orderPaid *messaging.OrderPaidPublisher) *container {
+	return &container{database: database, inventoryConn: inventoryConn, paymentConn: paymentConn, orderPaid: orderPaid}
 }
 
 func (c *container) Repository() *repository.OrderPostgres {
@@ -37,6 +39,7 @@ func (c *container) Service() *service.OrderService {
 			c.Repository(),
 			clientPayment.NewGrpcPaymentClient(c.paymentConn),
 			clientInventory.NewGrpcInventoryClient(c.inventoryConn),
+			c.orderPaid,
 		)
 	}
 	return c.service

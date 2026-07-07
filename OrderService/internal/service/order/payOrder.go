@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/model"
+	"github.com/jefrryss/go-grpc-microservices/shared/pkg/events"
 )
 
 func (o *OrderService) PayOrder(ctx context.Context, orderUUID uuid.UUID, paymentMethod model.PaymentMethod) (uuid.UUID, error) {
@@ -33,6 +34,17 @@ func (o *OrderService) PayOrder(ctx context.Context, orderUUID uuid.UUID, paymen
 	err = o.repo.SetOrder(ctx, order)
 	if err != nil {
 		return uuid.Nil, err
+	}
+	if o.orderPaid != nil {
+		if err := o.orderPaid.Publish(ctx, events.OrderPaid{
+			EventUUID:       uuid.NewString(),
+			OrderUUID:       order.ID.String(),
+			UserUUID:        order.UserID.String(),
+			PaymentMethod:   string(paymentMethod),
+			TransactionUUID: trancID.String(),
+		}); err != nil {
+			return uuid.Nil, err
+		}
 	}
 
 	return trancID, nil

@@ -22,6 +22,7 @@ const (
 	OrderStatusPendingPayment OrderStatus = "PENDING_PAYMENT"
 	OrderStatusPaid           OrderStatus = "PAID"
 	OrderStatusCancelled      OrderStatus = "CANCELLED"
+	OrderStatusCompleted      OrderStatus = "COMPLETED"
 )
 
 type Order struct {

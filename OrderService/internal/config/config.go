@@ -10,6 +10,7 @@ type Config struct {
 	Database     DatabaseConfig
 	Dependencies DependencyConfig
 	Logger       LoggerConfig
+	Kafka        KafkaConfig
 }
 
 var appConfig *Config
@@ -26,6 +27,7 @@ func Load(path string) error {
 		Database:     env.NewDatabaseConfig(),
 		Dependencies: env.NewDependencyConfig(),
 		Logger:       env.NewLoggerConfig(),
+		Kafka:        env.NewKafkaConfig(),
 	}
 	return nil
 }

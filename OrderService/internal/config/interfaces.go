@@ -19,3 +19,10 @@ type LoggerConfig interface {
 	Level() string
 	JSON() bool
 }
+
+type KafkaConfig interface {
+	Brokers() []string
+	OrderPaidTopic() string
+	ShipAssembledTopic() string
+	ShipAssembledGroupID() string
+}

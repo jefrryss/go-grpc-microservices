@@ -29,3 +29,15 @@ type LoggerConfig struct {
 
 func (c LoggerConfig) Level() string { return c.LevelValue }
 func (c LoggerConfig) JSON() bool    { return c.JSONValue }
+
+type KafkaConfig struct {
+	BrokerValues       []string
+	OrderPaidValue     string
+	ShipAssembledValue string
+	GroupValue         string
+}
+
+func (c KafkaConfig) Brokers() []string            { return c.BrokerValues }
+func (c KafkaConfig) OrderPaidTopic() string       { return c.OrderPaidValue }
+func (c KafkaConfig) ShipAssembledTopic() string   { return c.ShipAssembledValue }
+func (c KafkaConfig) ShipAssembledGroupID() string { return c.GroupValue }

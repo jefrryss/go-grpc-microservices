@@ -10,9 +10,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/config"
+	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/messaging"
 	"github.com/jefrryss/go-grpc-microservices/platform/pkg/closer"
 	platformHealth "github.com/jefrryss/go-grpc-microservices/platform/pkg/grpc/health"
+	platformKafka "github.com/jefrryss/go-grpc-microservices/platform/pkg/kafka"
+	platformConsumer "github.com/jefrryss/go-grpc-microservices/platform/pkg/kafka/consumer"
+	platformProducer "github.com/jefrryss/go-grpc-microservices/platform/pkg/kafka/producer"
 	"github.com/jefrryss/go-grpc-microservices/platform/pkg/logger"
+	kafkaMiddleware "github.com/jefrryss/go-grpc-microservices/platform/pkg/middleware/kafka"
 	orderV1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -26,6 +31,7 @@ type App struct {
 	listener   net.Listener
 	grpcServer *grpc.Server
 	httpServer *http.Server
+	consumer   *messaging.ShipAssembledConsumer
 }
 
 func New(ctx context.Context, cfg *config.Config) (*App, error) {
@@ -67,7 +73,50 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("listen on %s: %w", cfg.Server.GRPCAddress(), err)
 	}
 
-	container := newContainer(database, inventoryConn, paymentConn)
+	resourceCloser := closer.New()
+	resourceCloser.Add("logger", func(context.Context) error { return log.Sync() })
+	resourceCloser.Add("PostgreSQL", func(context.Context) error { database.Close(); return nil })
+	resourceCloser.Add("InventoryService connection", func(context.Context) error { return inventoryConn.Close() })
+	resourceCloser.Add("PaymentService connection", func(context.Context) error { return paymentConn.Close() })
+	resourceCloser.Add("gRPC listener", func(context.Context) error {
+		err := listener.Close()
+		if errors.Is(err, net.ErrClosed) {
+			return nil
+		}
+		return err
+	})
+
+	var orderPaidPublisher *messaging.OrderPaidPublisher
+	var kafkaConsumer platformKafka.Consumer
+	if len(cfg.Kafka.Brokers()) > 0 {
+		producer, err := platformProducer.New(cfg.Kafka.Brokers(), cfg.Kafka.OrderPaidTopic(), log)
+		if err != nil {
+			_ = resourceCloser.Close(ctx)
+			return nil, fmt.Errorf("create OrderPaid producer: %w", err)
+		}
+		resourceCloser.Add("OrderPaid producer", func(context.Context) error { return producer.Close() })
+		orderPaidPublisher = messaging.NewOrderPaidPublisher(producer)
+
+		consumer, err := platformConsumer.New(
+			cfg.Kafka.Brokers(),
+			cfg.Kafka.ShipAssembledGroupID(),
+			[]string{cfg.Kafka.ShipAssembledTopic()},
+			log,
+			kafkaMiddleware.Logging(log),
+		)
+		if err != nil {
+			_ = resourceCloser.Close(ctx)
+			return nil, fmt.Errorf("create ShipAssembled consumer: %w", err)
+		}
+		resourceCloser.Add("ShipAssembled consumer", func(context.Context) error { return consumer.Close() })
+		kafkaConsumer = consumer
+	}
+
+	container := newContainer(database, inventoryConn, paymentConn, orderPaidPublisher)
+	var shipAssembledConsumer *messaging.ShipAssembledConsumer
+	if kafkaConsumer != nil {
+		shipAssembledConsumer = messaging.NewShipAssembledConsumer(kafkaConsumer, container.Service())
+	}
 	grpcServer := grpc.NewServer()
 	orderV1.RegisterOrderServiceServer(grpcServer, container.API())
 	platformHealth.Register(grpcServer, orderV1.OrderService_ServiceDesc.ServiceName)
@@ -107,34 +156,31 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	})
 	httpServer := &http.Server{Addr: cfg.Server.HTTPAddress(), Handler: rootMux}
 
-	resourceCloser := closer.New()
-	resourceCloser.Add("logger", func(context.Context) error { return log.Sync() })
-	resourceCloser.Add("PostgreSQL", func(context.Context) error { database.Close(); return nil })
-	resourceCloser.Add("InventoryService connection", func(context.Context) error { return inventoryConn.Close() })
-	resourceCloser.Add("PaymentService connection", func(context.Context) error { return paymentConn.Close() })
-	resourceCloser.Add("gRPC listener", func(context.Context) error {
-		err := listener.Close()
-		if errors.Is(err, net.ErrClosed) {
-			return nil
-		}
-		return err
-	})
 	resourceCloser.Add("gRPC server", func(context.Context) error { grpcServer.GracefulStop(); return nil })
 	resourceCloser.Add("HTTP server", httpServer.Shutdown)
 
-	return &App{logger: log, closer: resourceCloser, listener: listener, grpcServer: grpcServer, httpServer: httpServer}, nil
+	return &App{
+		logger: log, closer: resourceCloser, listener: listener,
+		grpcServer: grpcServer, httpServer: httpServer, consumer: shipAssembledConsumer,
+	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
 	a.logger.Info(ctx, "OrderService started")
-	errCh := make(chan error, 2)
+	errCh := make(chan error, 3)
 	go func() { errCh <- a.grpcServer.Serve(a.listener) }()
 	go func() { errCh <- a.httpServer.ListenAndServe() }()
+	if a.consumer != nil {
+		go func() { errCh <- a.consumer.Run(ctx) }()
+	}
 
 	select {
 	case <-ctx.Done():
 		return nil
 	case err := <-errCh:
+		if err == nil {
+			return nil
+		}
 		if errors.Is(err, grpc.ErrServerStopped) || errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}

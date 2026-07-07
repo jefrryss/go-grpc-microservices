@@ -16,6 +16,10 @@ services:
       HTTP_PORT: ${HTTP_PORT:-8080}
       LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
       LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+      KAFKA_BROKERS: kafka:9092
+      ORDER_PAID_TOPIC: order.paid
+      SHIP_ASSEMBLED_TOPIC: ship.assembled
+      SHIP_ASSEMBLED_GROUP_ID: order-service
 
     ports:
       - "50051:50051"
