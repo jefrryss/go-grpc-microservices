@@ -1,0 +1,22 @@
+services:
+  assembly-service:
+    build:
+      context: ../../..
+      dockerfile: AssemblyService/Dockerfile
+    image: assembly-service:latest
+    container_name: assembly_service
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      ORDER_PAID_TOPIC: ${ORDER_PAID_TOPIC:-order.paid}
+      SHIP_ASSEMBLED_TOPIC: ${SHIP_ASSEMBLED_TOPIC:-ship.assembled}
+      ORDER_PAID_GROUP_ID: ${ORDER_PAID_GROUP_ID:-assembly-service}
+      ASSEMBLY_DURATION: ${ASSEMBLY_DURATION:-10s}
+      LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
+      LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+    restart: unless-stopped
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true
