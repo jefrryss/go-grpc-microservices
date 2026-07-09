@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/auth/v1;auth_v1";
+
+import "google/api/annotations.proto";
+
+// AuthService manages users and sessions.
+service AuthService {
+  // Register creates a new user.
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {post: "/api/v1/auth/register", body: "*"};
+  }
+  // Login checks credentials and creates a session.
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {post: "/api/v1/auth/login", body: "*"};
+  }
+  // Whoami returns the current user.
+  rpc Whoami(WhoamiRequest) returns (WhoamiResponse) {
+    option (google.api.http) = {get: "/api/v1/auth/whoami"};
+  }
+  // GetUser returns a user by UUID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {get: "/api/v1/users/{user_uuid}"};
+  }
+}
+
+// NotificationMethod describes a notification destination.
+message NotificationMethod {
+  string provider_name = 1;
+  string target = 2;
+}
+
+// RegisterRequest contains new user data.
+message RegisterRequest {
+  string login = 1;
+  string password = 2;
+  string email = 3;
+  repeated NotificationMethod notification_methods = 4;
+}
+
+// RegisterResponse contains the created user UUID.
+message RegisterResponse {
+  string user_uuid = 1;
+}
+
+// LoginRequest contains user credentials.
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+// LoginResponse contains a session UUID.
+message LoginResponse {
+  string session_uuid = 1;
+}
+
+// WhoamiRequest can carry a session for non-metadata clients.
+message WhoamiRequest {
+  string session_uuid = 1;
+}
+
+// WhoamiResponse contains the current user identity.
+message WhoamiResponse {
+  string user_uuid = 1;
+  string login = 2;
+  string email = 3;
+}
+
+// GetUserRequest identifies a user.
+message GetUserRequest {
+  string user_uuid = 1;
+}
+
+// GetUserResponse contains a user profile.
+message GetUserResponse {
+  string user_uuid = 1;
+  string login = 2;
+  string email = 3;
+  repeated NotificationMethod notification_methods = 4;
+}
