@@ -16,7 +16,7 @@ func (o *OrderService) CompleteOrder(ctx context.Context, orderUUID uuid.UUID) e
 	if order.Status != model.OrderStatusPaid {
 		return model.ErrInvalidOrderStatus
 	}
-	order.Status = model.OrderStatusCompleted
+	order.Status = model.OrderStatusAssembled
 	order.UpdatedAt = time.Now()
 	return o.repo.SetOrder(ctx, order)
 }

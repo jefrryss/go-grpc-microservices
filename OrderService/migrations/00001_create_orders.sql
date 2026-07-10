@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS orders (
                 'PENDING_PAYMENT',
                 'PAID',
                 'CANCELLED',
-                'COMPLETED'
+                'ASSEMBLED'
             )
         ),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

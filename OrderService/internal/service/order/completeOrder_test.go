@@ -16,7 +16,7 @@ func (s *ServiceSuite) TestCompleteOrder_Success() {
 	err := s.service.CompleteOrder(s.ctx, orderID)
 
 	s.NoError(err)
-	s.Equal(model.OrderStatusCompleted, order.Status)
+	s.Equal(model.OrderStatusAssembled, order.Status)
 	s.WithinDuration(time.Now(), order.UpdatedAt, time.Second)
 }
 
