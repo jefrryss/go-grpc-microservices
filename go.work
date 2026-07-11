@@ -4,6 +4,7 @@ use (
 	./AssemblyService
 	./AuthService
 	./InventoryService
+	./NotificationService
 	./OrderService
 	./PaymentService
 	./platform

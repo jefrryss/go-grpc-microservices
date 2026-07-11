@@ -1,0 +1,22 @@
+services:
+  notification-service:
+    build:
+      context: ../../..
+      dockerfile: NotificationService/Dockerfile
+    image: notification-service:latest
+    container_name: notification_service
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      ORDER_PAID_TOPIC: ${ORDER_PAID_TOPIC:-order.paid}
+      SHIP_ASSEMBLED_TOPIC: ${SHIP_ASSEMBLED_TOPIC:-ship.assembled}
+      AUTH_SERVICE_ADDRESS: auth-service:50054
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
+      LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+    restart: unless-stopped
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true
