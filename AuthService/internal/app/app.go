@@ -97,7 +97,9 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	root := http.NewServeMux()
-	root.HandleFunc("/authorize", authorizeHandler(authService))
+	authorize := authorizeHandler(authService)
+	root.HandleFunc("/authorize", authorize)
+	root.HandleFunc("/authorize/", authorize)
 	root.Handle("/", gateway)
 	httpServer := &http.Server{Addr: cfg.HTTPAddress, Handler: root}
 
