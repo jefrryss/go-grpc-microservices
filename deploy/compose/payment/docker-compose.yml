@@ -12,6 +12,7 @@ services:
       GRPC_PORT: ${GRPC_PORT:-50053}
       LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
       LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
 
     ports:
       - "50053:50053"

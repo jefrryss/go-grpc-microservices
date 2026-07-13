@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/PaymentService/internal/model"
+	"go.uber.org/zap"
 )
 
 func (p *PaymentService) CreateTransaction(ctx context.Context, orderUUID, userUUID uuid.UUID, paymentMethod model.PaymentMethod) (uuid.UUID, error) {
@@ -20,7 +20,7 @@ func (p *PaymentService) CreateTransaction(ctx context.Context, orderUUID, userU
 	}
 	trancUUID := uuid.New()
 
-	log.Printf("Оплата прошла успешно, transaction_uuid: %s", trancUUID)
+	p.logger.Info(ctx, "Payment completed", zap.String("transaction_uuid", trancUUID.String()))
 	return trancUUID, nil
 
 }

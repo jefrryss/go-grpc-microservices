@@ -6,10 +6,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/model"
+	"github.com/jefrryss/go-grpc-microservices/platform/pkg/tracing"
 	"github.com/jefrryss/go-grpc-microservices/shared/pkg/events"
 )
 
 func (o *OrderService) PayOrder(ctx context.Context, orderUUID uuid.UUID, paymentMethod model.PaymentMethod) (uuid.UUID, error) {
+	_, span := tracing.Start(ctx, "order-service", "PayOrder")
+	defer span.End()
 	if err := ctx.Err(); err != nil {
 		return uuid.Nil, err
 	}
@@ -17,6 +20,9 @@ func (o *OrderService) PayOrder(ctx context.Context, orderUUID uuid.UUID, paymen
 	order, err := o.repo.GetOrder(ctx, orderUUID)
 	if err != nil {
 		return uuid.Nil, err
+	}
+	if o.observer != nil {
+		o.observer.OrderPaid(order.TotalPrice)
 	}
 	if order.Status != model.OrderStatusPendingPayment {
 		return uuid.Nil, model.ErrInvalidOrderStatus

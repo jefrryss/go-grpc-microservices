@@ -8,3 +8,7 @@ type LoggerConfig interface {
 	Level() string
 	JSON() bool
 }
+
+type TracingConfig interface {
+	Endpoint() string
+}

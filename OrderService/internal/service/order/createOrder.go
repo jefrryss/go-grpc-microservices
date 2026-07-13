@@ -60,6 +60,9 @@ func (o *OrderService) CreateOrder(ctx context.Context, userUUID uuid.UUID, part
 	if err != nil {
 		return uuid.Nil, 0, err
 	}
+	if o.observer != nil {
+		o.observer.OrderCreated()
+	}
 
 	return orderUUID, totalPrice, nil
 }

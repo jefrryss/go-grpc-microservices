@@ -51,7 +51,7 @@ func (s *ServiceSuite) TestPayOrder_PublishesEvent() {
 	userID := uuid.New()
 	order := &model.Order{ID: orderID, UserID: userID, Status: model.OrderStatusPendingPayment}
 	publisher := &publisherStub{}
-	s.service = NewOrderService(s.repoMock, s.clPaymentMock, s.clInventoryMock, publisher)
+	s.service = NewOrderService(s.repoMock, s.clPaymentMock, s.clInventoryMock, WithOrderPaidPublisher(publisher))
 	s.repoMock.On("GetOrder", s.ctx, orderID).Return(order, nil).Once()
 	s.clPaymentMock.On("PayOrder", s.ctx, orderID, userID, model.PaymentMethodCard).Return(transactionID, nil).Once()
 	s.repoMock.On("SetOrder", s.ctx, order).Return(nil).Once()

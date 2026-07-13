@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	GRPC   GRPCConfig
-	Logger LoggerConfig
+	GRPC    GRPCConfig
+	Logger  LoggerConfig
+	Tracing TracingConfig
 }
 
 var appConfig *Config
@@ -20,8 +21,9 @@ func Load(path string) error {
 	}
 
 	appConfig = &Config{
-		GRPC:   env.NewGRPCConfig(),
-		Logger: env.NewLoggerConfig(),
+		GRPC:    env.NewGRPCConfig(),
+		Logger:  env.NewLoggerConfig(),
+		Tracing: env.NewTracingConfig(),
 	}
 	return nil
 }

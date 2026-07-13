@@ -13,3 +13,7 @@ type LoggerConfig struct {
 
 func (c LoggerConfig) Level() string { return c.LevelValue }
 func (c LoggerConfig) JSON() bool    { return c.JSONValue }
+
+type TracingConfig struct{ EndpointValue string }
+
+func (c TracingConfig) Endpoint() string { return c.EndpointValue }

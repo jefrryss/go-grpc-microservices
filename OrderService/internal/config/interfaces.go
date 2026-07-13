@@ -26,3 +26,7 @@ type KafkaConfig interface {
 	ShipAssembledTopic() string
 	ShipAssembledGroupID() string
 }
+
+type TracingConfig interface {
+	Endpoint() string
+}

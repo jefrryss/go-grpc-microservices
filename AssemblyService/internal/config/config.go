@@ -19,6 +19,7 @@ type Config struct {
 	BuildDuration      time.Duration
 	LoggerLevel        string
 	LoggerJSON         bool
+	MetricsAddress     string
 }
 
 func Load(path string) (*Config, error) {
@@ -47,6 +48,7 @@ func Load(path string) (*Config, error) {
 		BuildDuration:      buildDuration,
 		LoggerLevel:        valueOrDefault("LOGGER_LEVEL", "info"),
 		LoggerJSON:         loggerJSON,
+		MetricsAddress:     valueOrDefault("METRICS_ADDRESS", ":8085"),
 	}, nil
 }
 

@@ -41,3 +41,7 @@ func (c KafkaConfig) Brokers() []string            { return c.BrokerValues }
 func (c KafkaConfig) OrderPaidTopic() string       { return c.OrderPaidValue }
 func (c KafkaConfig) ShipAssembledTopic() string   { return c.ShipAssembledValue }
 func (c KafkaConfig) ShipAssembledGroupID() string { return c.GroupValue }
+
+type TracingConfig struct{ EndpointValue string }
+
+func (c TracingConfig) Endpoint() string { return c.EndpointValue }

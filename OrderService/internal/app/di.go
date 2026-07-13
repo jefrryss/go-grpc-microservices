@@ -20,10 +20,14 @@ type container struct {
 	service       *service.OrderService
 	api           orderV1.OrderServiceServer
 	orderPaid     *messaging.OrderPaidPublisher
+	observer      service.Observer
 }
 
-func newContainer(database *pgxpool.Pool, inventoryConn, paymentConn *grpc.ClientConn, orderPaid *messaging.OrderPaidPublisher) *container {
-	return &container{database: database, inventoryConn: inventoryConn, paymentConn: paymentConn, orderPaid: orderPaid}
+func newContainer(database *pgxpool.Pool, inventoryConn, paymentConn *grpc.ClientConn, orderPaid *messaging.OrderPaidPublisher, observer service.Observer) *container {
+	return &container{
+		database: database, inventoryConn: inventoryConn, paymentConn: paymentConn,
+		orderPaid: orderPaid, observer: observer,
+	}
 }
 
 func (c *container) Repository() *repository.OrderPostgres {
@@ -35,11 +39,15 @@ func (c *container) Repository() *repository.OrderPostgres {
 
 func (c *container) Service() *service.OrderService {
 	if c.service == nil {
+		options := []service.Option{service.WithObserver(c.observer)}
+		if c.orderPaid != nil {
+			options = append(options, service.WithOrderPaidPublisher(c.orderPaid))
+		}
 		c.service = service.NewOrderService(
 			c.Repository(),
 			clientPayment.NewGrpcPaymentClient(c.paymentConn),
 			clientInventory.NewGrpcInventoryClient(c.inventoryConn),
-			c.orderPaid,
+			options...,
 		)
 	}
 	return c.service

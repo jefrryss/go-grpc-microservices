@@ -20,6 +20,7 @@ services:
       ORDER_PAID_TOPIC: order.paid
       SHIP_ASSEMBLED_TOPIC: ship.assembled
       SHIP_ASSEMBLED_GROUP_ID: order-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
 
     ports:
       - "50051:50051"

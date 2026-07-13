@@ -13,6 +13,9 @@ services:
       ASSEMBLY_DURATION: ${ASSEMBLY_DURATION:-10s}
       LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
       LOGGER_AS_JSON: ${LOGGER_AS_JSON:-true}
+      METRICS_ADDRESS: :8085
+    ports:
+      - "8085:8085"
     restart: unless-stopped
     networks:
       - microservices-net

@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/config"
 	"github.com/jefrryss/go-grpc-microservices/OrderService/internal/messaging"
+	orderMetrics "github.com/jefrryss/go-grpc-microservices/OrderService/internal/metrics"
 	"github.com/jefrryss/go-grpc-microservices/platform/pkg/closer"
 	platformHealth "github.com/jefrryss/go-grpc-microservices/platform/pkg/grpc/health"
 	platformKafka "github.com/jefrryss/go-grpc-microservices/platform/pkg/kafka"
@@ -18,6 +19,8 @@ import (
 	platformProducer "github.com/jefrryss/go-grpc-microservices/platform/pkg/kafka/producer"
 	"github.com/jefrryss/go-grpc-microservices/platform/pkg/logger"
 	kafkaMiddleware "github.com/jefrryss/go-grpc-microservices/platform/pkg/middleware/kafka"
+	platformPrometheus "github.com/jefrryss/go-grpc-microservices/platform/pkg/prometheus"
+	"github.com/jefrryss/go-grpc-microservices/platform/pkg/tracing"
 	orderV1 "github.com/jefrryss/go-grpc-microservices/shared/pkg/proto/order/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -43,6 +46,10 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create logger: %w", err)
 	}
+	shutdownTracer, err := tracing.Init(ctx, tracing.Config{ServiceName: "order-service", Endpoint: cfg.Tracing.Endpoint()})
+	if err != nil {
+		return nil, fmt.Errorf("initialize tracing: %w", err)
+	}
 
 	database, err := pgxpool.New(ctx, cfg.Database.URL())
 	if err != nil {
@@ -53,12 +60,17 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("ping PostgreSQL: %w", err)
 	}
 
-	inventoryConn, err := grpc.NewClient(cfg.Dependencies.InventoryAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	tracingClient := grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("order-service"))
+	inventoryConn, err := grpc.NewClient(
+		cfg.Dependencies.InventoryAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()), tracingClient,
+	)
 	if err != nil {
 		database.Close()
 		return nil, fmt.Errorf("create InventoryService client: %w", err)
 	}
-	paymentConn, err := grpc.NewClient(cfg.Dependencies.PaymentAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	paymentConn, err := grpc.NewClient(
+		cfg.Dependencies.PaymentAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()), tracingClient,
+	)
 	if err != nil {
 		_ = inventoryConn.Close()
 		database.Close()
@@ -78,6 +90,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	resourceCloser.Add("PostgreSQL", func(context.Context) error { database.Close(); return nil })
 	resourceCloser.Add("InventoryService connection", func(context.Context) error { return inventoryConn.Close() })
 	resourceCloser.Add("PaymentService connection", func(context.Context) error { return paymentConn.Close() })
+	resourceCloser.Add("tracing", shutdownTracer)
 	resourceCloser.Add("gRPC listener", func(context.Context) error {
 		err := listener.Close()
 		if errors.Is(err, net.ErrClosed) {
@@ -112,12 +125,16 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		kafkaConsumer = consumer
 	}
 
-	container := newContainer(database, inventoryConn, paymentConn, orderPaidPublisher)
+	metricsRegistry := platformPrometheus.NewRegistry()
+	container := newContainer(database, inventoryConn, paymentConn, orderPaidPublisher, orderMetrics.NewOrder(metricsRegistry.Registerer()))
 	var shipAssembledConsumer *messaging.ShipAssembledConsumer
 	if kafkaConsumer != nil {
 		shipAssembledConsumer = messaging.NewShipAssembledConsumer(kafkaConsumer, container.Service())
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		tracing.UnaryServerInterceptor("order-service"),
+		metricsRegistry.UnaryServerInterceptor(),
+	))
 	orderV1.RegisterOrderServiceServer(grpcServer, container.API())
 	platformHealth.Register(grpcServer, orderV1.OrderService_ServiceDesc.ServiceName)
 	reflection.Register(grpcServer)
@@ -132,12 +149,16 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		ctx,
 		gatewayMux,
 		cfg.Server.GatewayEndpoint(),
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		[]grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("order-service-gateway")),
+		},
 	); err != nil {
 		return nil, fmt.Errorf("register gRPC gateway: %w", err)
 	}
 
 	rootMux := http.NewServeMux()
+	rootMux.Handle("/metrics", metricsRegistry.Handler())
 	rootMux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "api/redoc.html")
 	})
@@ -154,7 +175,8 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		}
 		gatewayMux.ServeHTTP(w, r)
 	})
-	httpServer := &http.Server{Addr: cfg.Server.HTTPAddress(), Handler: rootMux}
+	httpHandler := tracing.HTTPMiddleware("order-service", metricsRegistry.HTTPMiddleware(rootMux))
+	httpServer := &http.Server{Addr: cfg.Server.HTTPAddress(), Handler: httpHandler}
 
 	resourceCloser.Add("gRPC server", func(context.Context) error { grpcServer.GracefulStop(); return nil })
 	resourceCloser.Add("HTTP server", httpServer.Shutdown)
