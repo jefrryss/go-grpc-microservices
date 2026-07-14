@@ -1,0 +1,11 @@
+groups:
+  - name: order-alerts
+    rules:
+      - alert: HighOrderCreationRate
+        expr: increase(orders_total[1m]) > 10
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 10 orders were created in one minute
+          description: "Created {{ $value }} orders during the last minute."

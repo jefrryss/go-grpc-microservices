@@ -27,3 +27,8 @@ for service in "${services[@]}"; do
   envsubst < "${template}" > "${output}"
   echo "Создан ${output}"
 done
+
+alertmanager_template="${script_dir}/../observability/alertmanager.yml.template"
+alertmanager_output="${script_dir}/../observability/alertmanager.yml"
+envsubst < "${alertmanager_template}" > "${alertmanager_output}"
+echo "Создан ${alertmanager_output}"

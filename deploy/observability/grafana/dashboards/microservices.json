@@ -1,0 +1,32 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Orders created",
+      "targets": [{"expr": "rate(orders_total[1m])", "legendFormat": "orders/s"}],
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Order revenue",
+      "targets": [{"expr": "orders_revenue_total"}],
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Assembly duration p95",
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(assembly_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}],
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["microservices"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "Microservices overview",
+  "uid": "microservices-overview",
+  "version": 1
+}
