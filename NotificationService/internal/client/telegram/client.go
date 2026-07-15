@@ -49,7 +49,14 @@ func (c *Client) Poll(ctx context.Context) error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			return err
+			retry := time.NewTimer(5 * time.Second)
+			select {
+			case <-ctx.Done():
+				retry.Stop()
+				return nil
+			case <-retry.C:
+				continue
+			}
 		}
 		for _, update := range updates {
 			offset = update.UpdateID + 1
