@@ -22,9 +22,14 @@ jobs:
       fail-fast: false
       matrix:
         service:
+          - AssemblyService
+          - AuthService
           - OrderService
           - InventoryService
+          - NotificationService
           - PaymentService
+          - platform
+          - shared
 
     steps:
       - name: Checkout repository
@@ -70,7 +75,7 @@ jobs:
   coverage:
     name: Update coverage badges
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: tests
+    needs: [tests, integration]
     runs-on: ubuntu-latest
     permissions:
       contents: write
