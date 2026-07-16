@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math/rand/v2"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +32,12 @@ func NewAssembly(duration time.Duration, publisher Publisher, observers ...Obser
 }
 
 func (s *Assembly) Handle(ctx context.Context, event events.OrderPaid) error {
-	timer := time.NewTimer(s.duration)
+	duration := s.duration
+	maxSeconds := int(s.duration / time.Second)
+	if maxSeconds > 1 {
+		duration = time.Duration(rand.IntN(maxSeconds)+1) * time.Second
+	}
+	timer := time.NewTimer(duration)
 	defer timer.Stop()
 	select {
 	case <-ctx.Done():
@@ -39,12 +45,12 @@ func (s *Assembly) Handle(ctx context.Context, event events.OrderPaid) error {
 	case <-timer.C:
 	}
 	if s.observer != nil {
-		s.observer.AssemblyCompleted(s.duration)
+		s.observer.AssemblyCompleted(duration)
 	}
 	return s.publisher.Publish(ctx, events.ShipAssembled{
 		EventUUID:    uuid.NewString(),
 		OrderUUID:    event.OrderUUID,
 		UserUUID:     event.UserUUID,
-		BuildTimeSec: int64(s.duration.Seconds()),
+		BuildTimeSec: int64(duration.Seconds()),
 	})
 }
