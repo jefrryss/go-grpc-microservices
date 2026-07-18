@@ -3,18 +3,36 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jefrryss/go-grpc-microservices/platform/pkg/logger"
 	platformMigrator "github.com/jefrryss/go-grpc-microservices/platform/pkg/migrator/pg"
+	"go.uber.org/zap"
 )
 
 func main() {
+	log, err := logger.New(logger.Config{Level: "info", JSON: true})
+	if err != nil {
+		panic(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := run(ctx); err != nil {
+		log.Error(ctx, "Migration failed", zap.Error(err))
+		_ = log.Sync()
+		os.Exit(1)
+	}
+	log.Info(ctx, "Migrations applied successfully")
+	_ = log.Sync()
+}
+
+func run(ctx context.Context) error {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		log.Fatal("DATABASE_URL is required")
+		return fmt.Errorf("DATABASE_URL is required")
 	}
 
 	migrationsPath := os.Getenv("MIGRATIONS_PATH")
@@ -24,20 +42,16 @@ func main() {
 
 	db, err := sql.Open("pgx", databaseURL)
 	if err != nil {
-		log.Fatalf("Failed to open PostgreSQL connection: %v", err)
+		return fmt.Errorf("open PostgreSQL connection: %w", err)
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+		return fmt.Errorf("connect to PostgreSQL: %w", err)
 	}
 
 	if err := platformMigrator.New(db, migrationsPath).Up(ctx); err != nil {
-		log.Fatalf("Failed to apply migrations: %v", err)
+		return fmt.Errorf("apply migrations: %w", err)
 	}
-
-	log.Println("Migrations applied successfully")
+	return nil
 }
