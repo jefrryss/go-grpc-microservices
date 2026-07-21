@@ -136,6 +136,7 @@ func authorizeHandler(authService *service.Auth) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("x-user-uuid", userID.String())
+		w.Header().Set("session-uuid", sessionID.String())
 		w.WriteHeader(http.StatusOK)
 	}
 }
