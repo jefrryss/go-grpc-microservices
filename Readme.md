@@ -24,26 +24,63 @@
 
 ```mermaid
 flowchart LR
-    Client["HTTP client"] --> Envoy["Envoy :8088"]
-    Envoy --> Auth["AuthService"]
-    Envoy --> Order["OrderService"]
+    Client(("Client")) -->|"HTTP / JSON"| Envoy["Envoy Gateway<br/>:8088"]
 
-    Order -->|gRPC| Inventory["InventoryService"]
-    Order -->|gRPC| Payment["PaymentService"]
-    Order -->|OrderPaid| Kafka["Kafka"]
+    Envoy -->|"ext_authz / HTTP"| Auth["Auth Service"]
+    Envoy -->|"HTTP"| Order["Order Service"]
 
-    Kafka --> Assembly["AssemblyService"]
-    Assembly -->|ShipAssembled| Kafka
-    Kafka --> Order
-    Kafka --> Notification["NotificationService"]
+    Order -->|"gRPC"| Payment["Payment Service"]
+    Order -->|"gRPC"| Inventory["Inventory Service"]
 
-    Notification -->|gRPC GetUser| Auth
-    Notification --> Telegram["Telegram Bot API"]
+    Auth --> AuthDB[("PostgreSQL<br/>users")]
+    Auth --> Redis[("Redis<br/>sessions")]
+    Order --> OrderDB[("PostgreSQL<br/>orders")]
+    Inventory --> MongoDB[("MongoDB<br/>parts")]
 
-    Auth --> AuthDB["PostgreSQL"]
-    Auth --> Redis["Redis"]
-    Order --> OrderDB["PostgreSQL"]
-    Inventory --> MongoDB["MongoDB"]
+    Order -->|"OrderPaid"| Kafka{{"Kafka"}}
+    Kafka -->|"OrderPaid"| Assembly["Assembly Service"]
+    Assembly -->|"ShipAssembled"| Kafka
+    Kafka -->|"ShipAssembled"| Order
+    Kafka -->|"OrderPaid / ShipAssembled"| Notification["Notification Service"]
+
+    Notification -->|"gRPC GetUser"| Auth
+    Notification -->|"HTTPS"| Telegram["Telegram Bot API"]
+
+    subgraph Observability["Observability"]
+        direction LR
+        Prometheus["Prometheus"] --> Grafana["Grafana"]
+        Jaeger["Jaeger"]
+        Filebeat["Filebeat"] --> Logstash["Logstash"] --> Elasticsearch["Elasticsearch"] --> Kibana["Kibana"]
+    end
+
+    Order -. "metrics" .-> Prometheus
+    Assembly -. "metrics" .-> Prometheus
+    Order -. "OTLP traces" .-> Jaeger
+    Payment -. "OTLP traces" .-> Jaeger
+    Order -. "JSON logs" .-> Filebeat
+    Auth -. "JSON logs" .-> Filebeat
+    Inventory -. "JSON logs" .-> Filebeat
+    Assembly -. "JSON logs" .-> Filebeat
+    Notification -. "JSON logs" .-> Filebeat
+
+    classDef client fill:#374151,stroke:#94a3b8,color:#f8fafc,stroke-width:2px;
+    classDef gateway fill:#4c1d95,stroke:#a78bfa,color:#ffffff,stroke-width:2px;
+    classDef primary fill:#e5eefb,stroke:#38bdf8,color:#0f172a,stroke-width:3px;
+    classDef service fill:#303741,stroke:#64748b,color:#f8fafc,stroke-width:2px;
+    classDef storage fill:#123047,stroke:#38bdf8,color:#e0f2fe,stroke-width:2px;
+    classDef broker fill:#111827,stroke:#f59e0b,color:#fef3c7,stroke-width:3px;
+    classDef external fill:#173b57,stroke:#38bdf8,color:#f0f9ff,stroke-width:2px;
+    classDef observe fill:#242b35,stroke:#94a3b8,color:#f8fafc,stroke-width:1px;
+
+    class Client client;
+    class Envoy gateway;
+    class Order primary;
+    class Auth,Payment,Inventory,Assembly,Notification service;
+    class AuthDB,Redis,OrderDB,MongoDB storage;
+    class Kafka broker;
+    class Telegram external;
+    class Prometheus,Grafana,Jaeger,Filebeat,Logstash,Elasticsearch,Kibana observe;
+    style Observability fill:#151a21,stroke:#64748b,stroke-width:2px,stroke-dasharray:6 6,color:#f8fafc;
 ```
 
 ## Сервисы
