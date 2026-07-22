@@ -1,66 +1,158 @@
-# Go gRPC microservices
+# Go gRPC Microservices
 
 [![Tests and Coverage](https://github.com/jefrryss/go-grpc-microservices/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/jefrryss/go-grpc-microservices/actions/workflows/coverage.yml)
 
-Учебный проект курса «Микросервисы, как в BigTech 2.0». Реализованы задания с 1-й по 8-ю неделю: синхронные gRPC-сервисы, PostgreSQL и MongoDB, Kafka, авторизация, уведомления, Envoy и observability.
+Микросервисная backend-система для каталога комплектующих, оформления заказов, оплаты, сборки и уведомления пользователей.
+
+Внешние HTTP-запросы проходят через Envoy. Внутри системы сервисы общаются по gRPC, а длительные процессы выполняются асинхронно через Kafka. Данные хранятся в PostgreSQL, MongoDB и Redis. Для наблюдения за системой подключены метрики, логи и распределённые трассировки.
+
+## Как работает заказ
+
+1. Пользователь регистрируется и входит через `AuthService`.
+2. `AuthService` создаёт сессию в Redis со сроком жизни 24 часа.
+3. Клиент получает список доступных комплектующих из `InventoryService`.
+4. `OrderService` проверяет товары, рассчитывает стоимость и сохраняет заказ в PostgreSQL.
+5. При оплате `OrderService` вызывает `PaymentService` по gRPC.
+6. После успешной оплаты в Kafka публикуется событие `OrderPaid`.
+7. `AssemblyService` получает событие, выполняет сборку и публикует `ShipAssembled`.
+8. `OrderService` переводит заказ в статус `ASSEMBLED`.
+9. `NotificationService` получает оба события, запрашивает настройки пользователя в `AuthService` и отправляет уведомления в Telegram.
+
+Статусы заказа: `PENDING_PAYMENT`, `PAID`, `CANCELLED`, `ASSEMBLED`.
 
 ## Архитектура
 
 ```mermaid
 flowchart LR
-    Client --> Envoy
-    Envoy --> Auth
-    Envoy --> Order
-    Order --> Inventory
-    Order --> Payment
-    Order -- OrderPaid --> Kafka
-    Kafka --> Assembly
-    Assembly -- ShipAssembled --> Kafka
+    Client["HTTP client"] --> Envoy["Envoy :8088"]
+    Envoy --> Auth["AuthService"]
+    Envoy --> Order["OrderService"]
+
+    Order -->|gRPC| Inventory["InventoryService"]
+    Order -->|gRPC| Payment["PaymentService"]
+    Order -->|OrderPaid| Kafka["Kafka"]
+
+    Kafka --> Assembly["AssemblyService"]
+    Assembly -->|ShipAssembled| Kafka
     Kafka --> Order
-    Kafka --> Notification
-    Notification --> Auth
-    Notification --> Telegram
+    Kafka --> Notification["NotificationService"]
+
+    Notification -->|gRPC GetUser| Auth
+    Notification --> Telegram["Telegram Bot API"]
+
+    Auth --> AuthDB["PostgreSQL"]
+    Auth --> Redis["Redis"]
+    Order --> OrderDB["PostgreSQL"]
+    Inventory --> MongoDB["MongoDB"]
 ```
 
-| Компонент | Назначение | Хранилище |
-| --- | --- | --- |
-| InventoryService | Каталог и остатки деталей | MongoDB |
-| OrderService | Создание, оплата и статусы заказов | PostgreSQL |
-| PaymentService | Проведение учебной транзакции | — |
-| AssemblyService | Асинхронная сборка за случайные 1–10 секунд | Kafka |
-| AuthService | Регистрация, вход, профили и сессии на 24 часа | PostgreSQL + Redis |
-| NotificationService | Уведомления по `OrderPaid` и `ShipAssembled` | Kafka + Telegram |
-| Envoy | Единая HTTP-точка входа и проверка сессии | — |
+## Сервисы
 
-Общий модуль `platform` содержит Zap-логгер, graceful shutdown, health checks, мигратор, Kafka producer/consumer и middleware, Prometheus и OpenTelemetry. Контракты и события находятся в `shared`.
+| Сервис | Ответственность | Внешний интерфейс | Зависимости |
+| --- | --- | --- | --- |
+| `OrderService` | Создание, получение, оплата и отмена заказов; обработка результата сборки | HTTP `:8080`, gRPC `:50051` | PostgreSQL, Inventory, Payment, Kafka |
+| `InventoryService` | Каталог комплектующих, фильтрация и проверка наличия | gRPC `:50052` | MongoDB |
+| `PaymentService` | Проведение платежа и генерация `transaction_uuid` | gRPC `:50053` | — |
+| `AssemblyService` | Асинхронная сборка заказа за случайные 1–10 секунд | Kafka, metrics `:8085` | Kafka |
+| `AuthService` | Регистрация, вход, профили пользователей и проверка сессий | HTTP `:8084`, gRPC `:50054` | PostgreSQL, Redis |
+| `NotificationService` | Обработка событий заказа и отправка сообщений | Kafka | AuthService, Telegram API |
+| `Envoy` | Единая точка входа, маршрутизация и проверка сессии | HTTP `:8088` | AuthService, OrderService |
 
-## Что реализовано по неделям
+Модуль `shared` содержит protobuf-контракты, сгенерированный gRPC-код и контракты Kafka-событий. Модуль `platform` содержит переиспользуемые компоненты: логгер, graceful shutdown, health checks, Kafka-клиенты, мигратор, метрики и трассировку.
 
-- Неделя 4: env-конфигурация, самописный DI, gRPC health checks, Testcontainers для PostgreSQL и MongoDB, integration job в CI.
-- Неделя 5: Kafka в KRaft-режиме, события `OrderPaid` и `ShipAssembled`, AssemblyService, обновление заказа до `ASSEMBLED`.
-- Неделя 6: AuthService, bcrypt, PostgreSQL-миграции, Redis-сессии с TTL 24 часа, gRPC auth middleware.
-- Неделя 7: Envoy с `ext_authz`, NotificationService, запрос `AuthService.GetUser`, Telegram и команда `/start`.
-- Неделя 8: JSON-логи и ELK, Prometheus/Grafana, Telegram-алерт при более чем 10 заказах в минуту, Jaeger и трейс Order → Payment.
+## Что реализовано
 
-## Запуск
+- REST API поверх gRPC с помощью gRPC-Gateway и OpenAPI.
+- Слоистая структура `API → Service → Repository/Client` и ручная dependency injection.
+- gRPC health checks и корректное завершение работы сервисов.
+- PostgreSQL через `pgxpool`, SQL-миграции через Goose.
+- MongoDB-репозиторий с индексами и идемпотентным наполнением каталога через `upsert`.
+- Redis-сессии с TTL 24 часа и bcrypt-хеширование паролей.
+- Kafka в режиме KRaft без ZooKeeper.
+- События `OrderPaid` и `ShipAssembled`, отдельные consumer groups и повторная обработка сообщений при ошибках.
+- Envoy `ext_authz`: `Register` и `Login` публичны, остальные HTTP-маршруты требуют действующую сессию.
+- Telegram-уведомления и обработка команды `/start`.
+- Структурированные JSON-логи через Zap.
+- Prometheus-метрики, Grafana dashboard и Alertmanager.
+- Telegram-алерт, если за минуту создано более 10 заказов.
+- Распределённый OpenTelemetry trace для цепочки `HTTP → OrderService → gRPC → PaymentService`.
+- Сбор логов по цепочке `stdout → Filebeat → Logstash → Elasticsearch → Kibana`.
+- Unit-тесты, integration-тесты с Testcontainers и автоматический пересчёт покрытия в GitHub Actions.
+- Многоэтапные Dockerfile, непривилегированный пользователь в контейнерах и раздельные Docker Compose-конфигурации.
 
-Нужны Go 1.25.1+, Docker Desktop и [Task](https://taskfile.dev/). Для полного стека желательно выделить Docker не менее 6 ГБ памяти из-за ELK.
+## Технологии и зачем они используются
+
+| Технология | Для чего используется |
+| --- | --- |
+| Go | Реализация сервисов, клиентов, фоновых обработчиков и платформенных компонентов |
+| Protocol Buffers + gRPC | Типизированные контракты и быстрое внутреннее взаимодействие сервисов |
+| gRPC-Gateway + OpenAPI | HTTP API и Swagger UI без дублирования транспортных моделей |
+| PostgreSQL + pgxpool | Надёжное хранение заказов и пользователей с пулом соединений |
+| Goose | Версионирование и автоматическое применение SQL-миграций |
+| MongoDB | Хранение каталога комплектующих с гибкими полями и фильтрами |
+| Redis | Быстрое хранение пользовательских сессий с автоматическим TTL |
+| Kafka | Асинхронная доставка событий между Order, Assembly и Notification |
+| Envoy | Единый gateway, маршрутизация запросов и централизованная авторизация |
+| Zap | Быстрые структурированные логи в JSON |
+| Prometheus + Grafana | Сбор метрик и отображение состояния системы |
+| Alertmanager | Контроль частоты создания заказов и отправка алертов |
+| OpenTelemetry + Jaeger | Связывание вызовов нескольких сервисов в один trace |
+| Elasticsearch + Logstash + Kibana | Централизованный поиск и просмотр логов |
+| Docker Compose | Локальный запуск всей системы одной командой |
+| Testcontainers | Integration-тесты на настоящих PostgreSQL и MongoDB |
+
+## Структура репозитория
+
+```text
+.
+├── AssemblyService/
+├── AuthService/
+├── InventoryService/
+├── NotificationService/
+├── OrderService/
+├── PaymentService/
+├── platform/                 # общие инфраструктурные компоненты
+├── shared/                   # protobuf-контракты и события
+├── deploy/
+│   ├── compose/              # Compose-файлы сервисов и инфраструктуры
+│   ├── env/                  # шаблоны переменных окружения
+│   ├── envoy/                # конфигурация gateway
+│   └── observability/        # Prometheus, Grafana, ELK и Alertmanager
+├── Taskfile.yml
+└── go.work
+```
+
+## Быстрый запуск
+
+Понадобятся:
+
+- Go 1.25.1 или новее;
+- Docker Desktop;
+- [Task](https://taskfile.dev/);
+- `envsubst` для генерации конфигурации из шаблонов.
+
+Полный стек с ELK требует примерно 6 ГБ доступной Docker-памяти.
+
+Создайте локальную конфигурацию:
 
 ```bash
 cp deploy/env/.env.example deploy/env/.env
 ```
 
-Перед запуском замените в `deploy/env/.env`:
+Затем измените в `deploy/env/.env`:
 
-- `TELEGRAM_BOT_TOKEN` — токен от BotFather;
-- `TELEGRAM_ALERT_CHAT_ID` — числовой ID чата для Alertmanager;
-- пароли PostgreSQL, Redis и Grafana.
+- пароли PostgreSQL и Redis;
+- `TELEGRAM_BOT_TOKEN` — токен Telegram-бота;
+- `TELEGRAM_ALERT_CHAT_ID` — числовой ID чата для алертов;
+- логин и пароль Grafana при необходимости.
 
-Запуск всех баз, сервисов, Kafka, Envoy и observability:
+Запустите всю систему:
 
 ```bash
 task up
 ```
+
+Команда создаст env-файлы, поднимет сеть, базы данных, Kafka, все сервисы, Envoy и observability-стек.
 
 Остановка без удаления данных:
 
@@ -68,38 +160,66 @@ task up
 task down
 ```
 
-Полезные команды:
+Другие команды:
 
 ```bash
-task ps
-task logs SERVICE=order_service
-task seed-inventory
-task restart
-task smoke
+task ps                              # состояние контейнеров
+task logs SERVICE=order_service      # логи конкретного контейнера
+task restart                         # перезапуск всего стека
+task seed-inventory                  # повторный запуск MongoDB seed
+task smoke                           # проверка основных HTTP-интерфейсов
+task env:generate                    # повторная генерация env-файлов
 ```
 
-Inventory seed идемпотентен: повторный запуск обновляет товары через `upsert`, не создавая дубликаты.
+## Порты и интерфейсы
 
-## Адреса
+### API и сервисы
 
-| Интерфейс | URL |
-| --- | --- |
-| Envoy API и документация | http://localhost:8088/docs |
-| OrderService напрямую | http://localhost:8080/docs |
-| Kafka UI | http://localhost:8090 |
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 |
-| Alertmanager | http://localhost:9093 |
-| Jaeger | http://localhost:16686 |
-| Kibana | http://localhost:5601 |
-| Elasticsearch | http://localhost:9200 |
-| Envoy admin | http://localhost:9901 |
+| Порт | Компонент | Что можно проверить |
+| ---: | --- | --- |
+| `8088` | Envoy | Основная точка входа: http://localhost:8088/docs |
+| `8080` | OrderService HTTP | API напрямую: http://localhost:8080/docs |
+| `50051` | OrderService gRPC | gRPC reflection и health check |
+| `50052` | InventoryService gRPC | Получение и фильтрация товаров |
+| `50053` | PaymentService gRPC | Проведение платежа |
+| `50054` | AuthService gRPC | Register, Login, Whoami и GetUser |
+| `8084` | AuthService HTTP | HTTP API авторизации напрямую |
+| `8085` | AssemblyService | Prometheus endpoint `/metrics` |
+
+### Хранилища и Kafka
+
+| Порт | Компонент | Назначение |
+| ---: | --- | --- |
+| `5432` | Order PostgreSQL | База заказов |
+| `5433` | Auth PostgreSQL | База пользователей |
+| `27017` | MongoDB | Каталог комплектующих |
+| `6380` | Redis | Пользовательские сессии |
+| `9094` | Kafka | Подключение к брокеру с хоста |
+| `8090` | Kafka UI | http://localhost:8090 — топики, сообщения и consumer groups |
+
+### Наблюдаемость
+
+| Порт | Интерфейс | Что смотреть |
+| ---: | --- | --- |
+| `9090` | [Prometheus](http://localhost:9090) | Targets, метрики и PromQL-запросы |
+| `3000` | [Grafana](http://localhost:3000) | Графики заказов, выручки и времени сборки |
+| `9093` | [Alertmanager](http://localhost:9093) | Состояние и история алертов |
+| `16686` | [Jaeger](http://localhost:16686) | Trace оплаты между OrderService и PaymentService |
+| `5601` | [Kibana](http://localhost:5601) | Централизованные JSON-логи сервисов |
+| `9200` | [Elasticsearch](http://localhost:9200) | Состояние Elasticsearch и индексы логов |
+| `9901` | [Envoy Admin](http://localhost:9901) | Кластеры, маршруты и статистика gateway |
+
+Основные бизнес-метрики:
+
+- `orders_total` — количество созданных заказов;
+- `orders_revenue_total` — суммарная выручка оплаченных заказов;
+- `assembly_duration_seconds` — длительность сборки заказов.
 
 ## Проверка API
 
-Register и Login публичны. Остальные HTTP-запросы через Envoy требуют заголовок `session-uuid` или `Authorization: Bearer <session_uuid>`.
+### 1. Регистрация
 
-Регистрация пользователя с Telegram-каналом:
+`Register` и `Login` доступны без сессии.
 
 ```bash
 curl -s http://localhost:8088/api/v1/auth/register \
@@ -109,12 +229,14 @@ curl -s http://localhost:8088/api/v1/auth/register \
     "password": "secret",
     "email": "demo@example.com",
     "notificationMethods": [
-      {"providerName": "telegram", "target": "YOUR_CHAT_ID"}
+      {"providerName": "telegram", "target": "YOUR_TELEGRAM_CHAT_ID"}
     ]
   }'
 ```
 
-Вход:
+Из ответа понадобится `userUuid`.
+
+### 2. Вход
 
 ```bash
 curl -s http://localhost:8088/api/v1/auth/login \
@@ -122,14 +244,30 @@ curl -s http://localhost:8088/api/v1/auth/login \
   -d '{"login":"demo","password":"secret"}'
 ```
 
-Сохраните `userUuid` из Register и `sessionUuid` из Login. Получить товары можно через gRPC:
+Из ответа понадобится `sessionUuid`. Защищённые запросы принимают один из заголовков:
+
+```text
+session-uuid: SESSION_UUID
+```
+
+или:
+
+```text
+Authorization: Bearer SESSION_UUID
+```
+
+### 3. Получение товаров
 
 ```bash
-grpcurl -plaintext -d '{"filter":{}}' \
+./bin/grpcurl -plaintext -d '{"filter":{}}' \
   localhost:50052 inventory.v1.InventoryService/ListParts
 ```
 
-Создание заказа:
+Каталог наполняется автоматически при запуске. Seed использует `upsert`, поэтому повторный запуск не создаёт дубликаты.
+
+### 4. Создание заказа
+
+Подставьте значения `USER_UUID`, `SESSION_UUID` и `PART_UUID` из предыдущих ответов:
 
 ```bash
 curl -s http://localhost:8088/api/v1/orders \
@@ -138,7 +276,7 @@ curl -s http://localhost:8088/api/v1/orders \
   -d '{"user_uuid":"USER_UUID","part_uuids":["PART_UUID"]}'
 ```
 
-Оплата:
+### 5. Оплата
 
 ```bash
 curl -s -X POST http://localhost:8088/api/v1/orders/ORDER_UUID/pay \
@@ -147,22 +285,34 @@ curl -s -X POST http://localhost:8088/api/v1/orders/ORDER_UUID/pay \
   -d '{"payment_method":"PAYMENT_METHOD_CARD"}'
 ```
 
-После оплаты OrderService публикует событие, AssemblyService собирает заказ за 1–10 секунд, а итоговый статус становится `ASSEMBLED`. События видны в Kafka UI, уведомления приходят в Telegram, а трейс оплаты — в Jaeger.
+После оплаты:
 
-## Тесты и генерация
+- сообщения `OrderPaid` и `ShipAssembled` можно увидеть в Kafka UI;
+- через 1–10 секунд статус заказа станет `ASSEMBLED`;
+- Telegram-бот отправит уведомления, если у пользователя настроен метод `telegram`;
+- полный trace вызова появится в Jaeger;
+- метрики изменятся в Prometheus и Grafana;
+- JSON-логи появятся в Kibana.
+
+Получение текущего состояния заказа:
 
 ```bash
-task test
-task vet
-task test-integration
-task test-coverage
-task coverage:html
-task generate
+curl -s http://localhost:8088/api/v1/orders/ORDER_UUID \
+  -H 'session-uuid: SESSION_UUID'
 ```
 
-Integration-тестам нужен запущенный Docker. Полный e2e-тест намеренно не добавлен; API проверяется приведёнными запросами и `task smoke`.
+## Тесты и качество кода
 
-CI запускает unit-тесты всех модулей, Testcontainers-тесты InventoryService и OrderService, затем пересчитывает coverage badges.
+```bash
+task test               # unit-тесты всех Go-модулей
+task vet                # статическая проверка Go-кода
+task test-integration   # PostgreSQL и MongoDB через Testcontainers
+task test-coverage      # отчёт покрытия по сервисам
+task coverage:html      # HTML-отчёт в coverage/coverage.html
+task generate           # проверка proto и повторная генерация кода
+```
+
+GitHub Actions запускает тесты для всех модулей, integration-тесты InventoryService и OrderService, после чего пересчитывает проценты покрытия в README.
 
 ## Покрытие тестами
 
@@ -172,6 +322,8 @@ CI запускает unit-тесты всех модулей, Testcontainers-т
 | **InventoryService** | <img src="https://img.shields.io/badge/Coverage-78.7%25-yellow" /> |
 | **PaymentService** | <img src="https://img.shields.io/badge/Coverage-93.3%25-brightgreen" /> |
 
-## Конфигурация
+## Конфигурация и секреты
 
-Исходные значения хранятся только в локальном `deploy/env/.env`, который исключён из Git. `task env:generate` создаёт `.env` для каждого Compose-проекта и итоговый конфиг Alertmanager. Шаблоны без секретов находятся в `deploy/env` и `deploy/observability`.
+Локальные значения находятся в `deploy/env/.env` и не добавляются в Git. Файлы в `deploy/env/*.template` содержат шаблоны без секретов. Команда `task env:generate` создаёт отдельный `.env` для каждого Compose-проекта и конфигурацию Alertmanager.
+
+Не добавляйте реальные пароли, Telegram-токены и chat ID в репозиторий.
